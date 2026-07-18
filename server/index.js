@@ -23,14 +23,23 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "2mb" }));
 
-/* CORS — env-extendable allowlist merged with local dev origins (ADLM pattern) */
-const PROD_ORIGINS = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
-const allowlist = Array.from(new Set([...PROD_ORIGINS, "http://localhost:5173", "http://localhost:4173"]));
+/* CORS — env-extendable allowlist merged with local dev origins (ADLM pattern).
+   Origins normalize (lowercase, no trailing slash) so a pasted value with a
+   trailing slash still matches; Vercel preview deployments of this project
+   (bk-po-c-*.vercel.app) are allowed automatically. */
+const normOrigin = (s) => String(s || "").trim().toLowerCase().replace(/\/+$/, "");
+const PROD_ORIGINS = (process.env.CORS_ORIGINS || "").split(",").map(normOrigin).filter(Boolean);
+const allowlist = new Set([...PROD_ORIGINS, "http://localhost:5173", "http://localhost:4173"]);
+const isAllowedOrigin = (origin) => {
+  const o = normOrigin(origin);
+  if (allowlist.has(o)) return true;
+  return /^https:\/\/bk-po-c[a-z0-9-]*\.vercel\.app$/.test(o); // project preview URLs
+};
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin || allowlist.includes(origin)) return cb(null, true);
-      cb(new Error("Not allowed by CORS"));
+      if (!origin || isAllowedOrigin(origin)) return cb(null, true);
+      cb(new Error(`Not allowed by CORS: ${origin} — add it to CORS_ORIGINS`));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -50,6 +59,10 @@ app.use(["/pipeline", "/api/pipeline"], pipelineRoutes);
 /* ─── error tail ─── */
 app.use((req, res) => res.status(404).json({ error: "Not found" }));
 app.use((err, req, res, next) => {
+  if (/Not allowed by CORS/.test(err.message || "")) {
+    console.warn(err.message); // one-line warning, not a stack dump
+    return res.status(403).json({ error: err.message });
+  }
   const status = res.statusCode !== 200 ? res.statusCode : err.status || 500;
   if (status >= 500) console.error(err);
   res.status(status).json({ error: err.message || "Server error" });
