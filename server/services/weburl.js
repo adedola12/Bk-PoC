@@ -87,6 +87,78 @@ export async function fetchUrl(rawUrl) {
   return { buffer, contentType, ext, kind, finalUrl: res.url || rawUrl };
 }
 
+/**
+ * D16 crawl support — same-host link discovery with product-page scoring.
+ * A pasted site ROOT (manufacturer homepage) rarely lists products itself;
+ * we follow its most product-looking links, bounded hard.
+ */
+const PRODUCT_LINK_HINTS = /product|catalog|catalogue|category|categories|range|shop|item|sku|datasheet|download/i;
+
+export function extractLinks(html, baseUrl) {
+  const links = new Set();
+  const base = new URL(baseUrl);
+  for (const m of String(html).matchAll(/<a\s[^>]*href\s*=\s*["']([^"'#]+)["']/gi)) {
+    try {
+      const url = new URL(m[1], base);
+      if (!/^https?:$/.test(url.protocol)) continue;
+      if (url.hostname !== base.hostname) continue; // same host only
+      if (/\.(css|js|ico|svg|woff2?|png|jpe?g|gif|webp|mp4)$/i.test(url.pathname)) continue;
+      url.hash = "";
+      links.add(url.toString());
+    } catch {
+      /* malformed href — skip */
+    }
+  }
+  return [...links];
+}
+
+export function scoreProductLink(url) {
+  const path = new URL(url).pathname.toLowerCase();
+  let score = 0;
+  if (PRODUCT_LINK_HINTS.test(path)) score += 2;
+  if (/\.pdf$|\.xlsx?$/.test(path)) score += 3; // direct catalogue files are gold
+  score += Math.min(path.split("/").filter(Boolean).length, 3) * 0.5; // deeper = more specific
+  return score;
+}
+
+/** Heuristic: does this page's text actually talk about products? */
+export function productSignal(text) {
+  const t = String(text);
+  const priceHits = (t.match(/₦|NGN|USD|\$\s?\d|price/gi) || []).length;
+  const codeHits = (t.match(/\b[A-Z]{2,4}[-/]?\d{3,}\b/g) || []).length;
+  const unitHits = (t.match(/\b\d+\s?(mm|cm|kg|w|v|mpa|rpm)\b/gi) || []).length;
+  return { score: priceHits + codeHits + unitHits, priceHits, codeHits, unitHits, chars: t.length };
+}
+
+/**
+ * Bounded crawl: fetch up to `maxPages` best-scored same-host links from a
+ * root page and return their text. Never recursive beyond depth 1.
+ */
+export async function crawlForProducts(rootHtml, rootUrl, { maxPages = 6 } = {}) {
+  const ranked = extractLinks(rootHtml, rootUrl)
+    .map((url) => ({ url, score: scoreProductLink(url) }))
+    .filter((l) => l.score >= 2)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxPages);
+
+  const pages = [];
+  const files = [];
+  for (const { url } of ranked) {
+    try {
+      const fetched = await fetchUrl(url);
+      if (fetched.kind === "file") {
+        files.push({ url: fetched.finalUrl, ext: fetched.ext, buffer: fetched.buffer, contentType: fetched.contentType });
+      } else {
+        const text = htmlToText(fetched.buffer.toString("utf8"));
+        if (productSignal(text).score >= 3) pages.push({ url: fetched.finalUrl, text });
+      }
+    } catch {
+      /* dead/blocked link — crawl continues */
+    }
+  }
+  return { pages, files, followed: ranked.map((r) => r.url) };
+}
+
 /** Very light HTML → text: strip scripts/styles/tags, collapse whitespace. */
 export function htmlToText(html) {
   return String(html)

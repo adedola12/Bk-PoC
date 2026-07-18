@@ -87,6 +87,9 @@ router.post("/", async (req, res, next) => {
 
       const cover = mediaUrlFor(ipr, paired);
       if (cover && !row["Cover Image"]) row["Cover Image"] = cover;
+      if (cover && !cover.startsWith("local://")) {
+        await IPR.updateOne({ _id: ipr._id }, { $addToSet: { mediaRefs: cover } });
+      }
 
       const gate = gateRow({ ipr, row, schema, profile, dropdownFlags, factChecked });
       report.customDropdownValues += gate.customDropdowns.length;

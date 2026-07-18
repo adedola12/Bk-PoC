@@ -1,10 +1,17 @@
 import { v2 as cloudinary } from "cloudinary";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Lazy: ESM hoists imports above dotenv.config() in entrypoints, so env vars
+// may not exist at module-evaluation time (same pitfall as the Anthropic client).
+let configured = false;
+function ensureConfigured() {
+  if (configured) return;
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY?.trim(),
+    api_secret: process.env.CLOUDINARY_API_SECRET?.trim(),
+  });
+  configured = true;
+}
 
 export const hasCloudinary = () =>
   Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
@@ -15,6 +22,7 @@ export const hasCloudinary = () =>
  * convention: filename = SKU).
  */
 export function uploadBufferToCloudinary(buffer, publicId) {
+  ensureConfigured();
   const folder = process.env.CLOUDINARY_FOLDER?.replace(/\/previews$/, "/products") || "bk/products";
   return new Promise((resolve, reject) => {
     cloudinary.uploader

@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { FiPlay, FiDownload } from "react-icons/fi";
+import { FiPlay, FiDownload, FiBox, FiTruck, FiTag } from "react-icons/fi";
 import { fetchIprs, fetchTriage, extractUpload, runEmission, emissionDownloadUrl, errMsg } from "../api.js";
 
 const DISPOSITION = {
@@ -32,10 +32,16 @@ export default function Products() {
     load();
   }, [load]);
 
-  const extractable = uploads.filter((u) => {
-    const label = u.triage?.verifiedLabel || u.triage?.label;
-    return ["product_datasheet", "bk_template", "catalogue"].includes(label);
-  });
+  const extractable = [
+    ...new Map(
+      uploads
+        .filter((u) => {
+          const label = u.triage?.verifiedLabel || u.triage?.label;
+          return ["product_datasheet", "bk_template", "catalogue"].includes(label);
+        })
+        .map((u) => [u.originalName, u]) // newest ledger entry per filename
+    ).values(),
+  ];
 
   const runExtract = async (upload) => {
     setBusy(upload._id);
@@ -118,59 +124,102 @@ export default function Products() {
         </div>
       )}
 
-      <div className="mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-4 py-3 font-semibold">SKU</th>
-              <th className="px-4 py-3 font-semibold">Product</th>
-              <th className="px-4 py-3 font-semibold">Brand</th>
-              <th className="px-4 py-3 font-semibold">Taxonomy</th>
-              <th className="px-4 py-3 font-semibold">Variant</th>
-              <th className="px-4 py-3 font-semibold">Disposition</th>
-            </tr>
-          </thead>
-          <tbody>
-            {iprs.slice(0, 100).map((ipr, idx) => (
-              <motion.tr
-                key={ipr._id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.15, delay: Math.min(idx * 0.015, 0.4) }}
-                className="border-t border-slate-100 transition-colors duration-150 hover:bg-slate-50"
-              >
-                <td className="px-4 py-2 font-mono text-xs">
-                  {ipr.identity?.productCode?.value ?? ipr.templateRow?.["Product SKU"] ?? "—"}
-                </td>
-                <td className="max-w-xs truncate px-4 py-2">
-                  {ipr.identity?.name?.value ?? ipr.templateRow?.["Unique Product Name"] ?? "—"}
-                </td>
-                <td className="px-4 py-2">{ipr.identity?.brand?.value ?? ipr.templateRow?.["Brand"] ?? "—"}</td>
-                <td className="max-w-[16rem] truncate px-4 py-2 text-xs text-slate-500">{ipr.taxonomyPath ?? "template row"}</td>
-                <td className="px-4 py-2">
-                  {ipr.variantLabel ? (
-                    <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-800">
-                      {ipr.variantLabel}
-                    </span>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-                <td className="px-4 py-2">
-                  {ipr.disposition ? (
-                    <span className={`rounded px-2 py-0.5 text-xs font-semibold ${DISPOSITION[ipr.disposition]}`}>
-                      {ipr.disposition}
-                    </span>
-                  ) : (
-                    <span className="text-slate-400">pending</span>
-                  )}
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-        {iprs.length > 100 && <p className="px-4 py-2 text-xs text-slate-400">Showing first 100 of {iprs.length}.</p>}
+      {/* marketplace-style card grid (BK storefront format) */}
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {iprs.slice(0, 60).map((ipr, idx) => (
+          <ProductCard key={ipr._id} ipr={ipr} idx={idx} />
+        ))}
       </div>
+      {iprs.length > 60 && <p className="mt-3 text-xs text-slate-400">Showing first 60 of {iprs.length}.</p>}
     </div>
+  );
+}
+
+/* ─────────── product card — BK storefront format ─────────── */
+
+const PLACEHOLDER_TINTS = [
+  "from-slate-100 to-slate-200 text-slate-300",
+  "from-sky-50 to-slate-200 text-sky-200",
+  "from-amber-50 to-slate-200 text-amber-200",
+];
+
+function ProductCard({ ipr, idx }) {
+  const [imgFailed, setImgFailed] = React.useState(false);
+  const name = ipr.identity?.name?.value ?? ipr.templateRow?.["Unique Product Name"] ?? "Unnamed product";
+  const brand = ipr.identity?.brand?.value ?? ipr.templateRow?.["Brand"] ?? "";
+  const sku = ipr.identity?.productCode?.value ?? ipr.templateRow?.["Product SKU"] ?? "—";
+  const color = ipr.attributes?.color?.value ?? ipr.templateRow?.["Color"] ?? null;
+  const price = ipr.latestPrice;
+  const cover = !imgFailed ? ipr.coverUrl : null;
+  const tint = PLACEHOLDER_TINTS[idx % PLACEHOLDER_TINTS.length];
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, delay: Math.min(idx * 0.03, 0.5) }}
+      className="flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-shadow duration-200 hover:shadow-md"
+    >
+      {/* image area */}
+      <div className="relative h-44 w-full">
+        {cover ? (
+          <img
+            src={cover}
+            alt={name}
+            loading="lazy"
+            onError={() => setImgFailed(true)}
+            className="h-full w-full object-contain p-3"
+          />
+        ) : (
+          <div className={`flex h-full w-full flex-col items-center justify-center bg-gradient-to-br ${tint}`}>
+            <FiBox className="h-12 w-12" aria-hidden />
+            <span className="mt-1 text-xs font-semibold uppercase tracking-widest opacity-70">
+              {brand || "image pending"}
+            </span>
+          </div>
+        )}
+        {ipr.disposition && (
+          <span className={`absolute left-2 top-2 rounded px-1.5 py-0.5 text-[10px] font-bold ${DISPOSITION[ipr.disposition]}`}>
+            {ipr.disposition}
+          </span>
+        )}
+        {ipr.variantLabel && (
+          <span className="absolute right-2 top-2 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-800">
+            derived
+          </span>
+        )}
+      </div>
+
+      {/* body */}
+      <div className="flex flex-1 flex-col border-t border-slate-100 px-4 pb-3 pt-3">
+        <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-slate-800">
+          {brand && <span className="text-bk-navy">{brand} </span>}
+          {name}
+          {color ? `, ${color}` : ""}
+        </h3>
+        <p className="mt-1 border-b border-slate-100 pb-2 text-right font-mono text-[11px] text-bk-navy-mid">{sku}</p>
+
+        <p className="mt-2 text-lg font-extrabold text-slate-900">
+          {price ? (
+            <>
+              ₦{Number(price.price).toLocaleString()}
+              <span className="text-xs font-medium text-slate-500">/Unit</span>
+            </>
+          ) : (
+            <span className="text-sm font-semibold text-slate-400">Price pending → Todo</span>
+          )}
+        </p>
+
+        <div className="mt-auto border-t border-slate-100 pt-2 text-xs text-slate-500">
+          <p className="flex items-center gap-1.5">
+            <FiTruck className="h-3.5 w-3.5 text-bk-navy" aria-hidden /> 48hr delivery — Satkay Limited
+          </p>
+          <p className="mt-1 flex items-center gap-1.5">
+            <FiTag className="h-3.5 w-3.5 text-bk-navy" aria-hidden />
+            <span className="truncate">{(ipr.taxonomyPath ?? "BK template row").split(" > ").at(-1)}</span>
+          </p>
+        </div>
+      </div>
+    </motion.article>
   );
 }

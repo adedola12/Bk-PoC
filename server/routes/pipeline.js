@@ -139,10 +139,26 @@ router.post("/:uploadId/extract", async (req, res, next) => {
   }
 });
 
-/* ─── GET /iprs — inspect extracted records ─── */
+/* ─── GET /iprs — extracted records + latest ledger price + cover image ─── */
 router.get("/iprs", async (req, res, next) => {
   try {
+    const { PriceEvent } = await import("../models/PriceEvent.js");
+    const { normCode } = await import("../stages/vision_extract.js");
     const iprs = await IPR.find({}).sort({ createdAt: -1 }).limit(200).populate("upload", "originalName").lean();
+
+    const events = await PriceEvent.find({}).sort({ effectiveDate: 1 }).lean();
+    const latestBySku = new Map();
+    for (const e of events) latestBySku.set(normCode(e.sku), e); // chronological → last wins
+
+    for (const ipr of iprs) {
+      const sku = normCode(ipr.identity?.productCode?.value ?? ipr.templateRow?.["Product SKU"] ?? "");
+      const price = latestBySku.get(sku);
+      ipr.latestPrice = price ? { price: price.price, currency: price.currency, method: price.method } : null;
+      ipr.coverUrl =
+        (ipr.mediaRefs || []).find((u) => /^https?:\/\//.test(u)) ??
+        ipr.templateRow?.["Cover Image"] ??
+        null;
+    }
     res.json(iprs);
   } catch (err) {
     next(err);

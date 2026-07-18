@@ -130,21 +130,36 @@ export async function triageFile(filePath, ctx = {}) {
     });
   }
 
-  const result = await callClaudeJSON({
-    system: SYSTEM,
-    messages: [
-      {
-        role: "user",
-        content: `Filename: ${name}\nStructural signals: ${JSON.stringify({
-          ext,
-          pageCount: signals.pageCount ?? null,
-          textDensity: signals.textDensity ?? null,
-        })}\n\nExcerpt:\n${excerpt}`,
-      },
-    ],
-    log,
-    tag: `triage:${name}`,
-  });
+  let result;
+  try {
+    result = await callClaudeJSON({
+      system: SYSTEM,
+      messages: [
+        {
+          role: "user",
+          content: `Filename: ${name}\nStructural signals: ${JSON.stringify({
+            ext,
+            pageCount: signals.pageCount ?? null,
+            textDensity: signals.textDensity ?? null,
+          })}\n\nExcerpt:\n${excerpt}`,
+        },
+      ],
+      log,
+      tag: `triage:${name}`,
+    });
+  } catch (err) {
+    // AI tier unavailable (credits, outage) → route to HUMAN triage with the
+    // reason visible — never guess (§6.3), never fail the upload with a 500
+    log?.({ kind: "triage_ai_unavailable", file: name, message: err.message });
+    return finalize({
+      label: "other",
+      confidence: 0,
+      method: "rule",
+      summary: `AI classification unavailable (${err.message.slice(0, 120)}) — routed to human triage.`,
+      signals,
+      previewPath,
+    });
+  }
 
   return finalize({
     label: TRIAGE_LABELS.includes(result.label) ? result.label : "other",
