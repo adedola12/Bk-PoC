@@ -10,7 +10,11 @@ export const MODEL = "claude-sonnet-4-6"; // D8 default
 // run-record cost estimate shown in reports; update if pricing changes.
 const PRICE = { input: 3, output: 15 };
 
-const client = new Anthropic(); // reads ANTHROPIC_API_KEY from env
+// Lazy: ESM hoists imports above dotenv.config() in entrypoints, so the env
+// var may not exist at module-evaluation time. Trim guards stray whitespace
+// pasted into .env (an invalid header value otherwise).
+let client;
+const getClient = () => (client ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim() }));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -30,7 +34,7 @@ export async function callClaudeJSON({ system, messages, maxTokens = 1500, log, 
   for (let i = 0; i < attempts; i++) {
     const started = Date.now();
     try {
-      const res = await client.messages.create({
+      const res = await getClient().messages.create({
         model: MODEL,
         max_tokens: maxTokens,
         system: `${system}\n\nRespond with a single JSON object only — no prose, no code fences.`,

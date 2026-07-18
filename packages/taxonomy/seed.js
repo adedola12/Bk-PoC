@@ -1,5 +1,10 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import mongoose from "mongoose";
+
+// .env lives at the monorepo root
+dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.env") });
 import { buildRegister, buildCrosswalk } from "./src/index.js";
 
 /**
