@@ -2,6 +2,7 @@ import express from "express";
 import fs from "node:fs";
 import { UploadLedger } from "../models/UploadLedger.js";
 import { TRIAGE_LABELS } from "../stages/stage0_triage.js";
+import { parseVendorDocument } from "../stages/vendor_parse.js";
 
 const router = express.Router();
 
@@ -45,7 +46,18 @@ router.post("/:id/verify", async (req, res, next) => {
     item.triage.verifiedAt = new Date();
     item.triage.needsVerification = false;
     await item.save();
-    res.json(item);
+
+    // D11: once a human confirms a vendor_document, parse it into a
+    // structured vendor profile (never before — no silent filing).
+    let vendor = null;
+    if (item.triage.verifiedLabel === "vendor_document") {
+      try {
+        vendor = await parseVendorDocument(item);
+      } catch (err) {
+        console.error(`vendor parse failed for ${item.originalName}: ${err.message}`);
+      }
+    }
+    res.json({ ...item.toObject(), vendor });
   } catch (err) {
     next(err);
   }

@@ -12,6 +12,7 @@ import mongoose from "mongoose";
 import { connectDB } from "./db.js";
 import uploadRoutes from "./routes/uploads.js";
 import triageRoutes from "./routes/triage.js";
+import pipelineRoutes from "./routes/pipeline.js";
 
 await connectDB();
 
@@ -42,6 +43,7 @@ app.get(["/health", "/healthz"], (req, res) =>
 // mounted at both bare and /api paths (ADLM compatibility pattern)
 app.use(["/uploads", "/api/uploads"], uploadRoutes);
 app.use(["/triage", "/api/triage"], triageRoutes);
+app.use(["/pipeline", "/api/pipeline"], pipelineRoutes);
 
 /* ─── error tail ─── */
 app.use((req, res) => res.status(404).json({ error: "Not found" }));

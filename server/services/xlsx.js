@@ -11,7 +11,7 @@ const BK_SHEET_SET = ["Template", "Lookup", "Instructions"];
 const BK_HEADER_ANCHORS = ["Brand", "Unique Product Name", "Collection", "Color", "Tags"];
 
 /** Cell value → plain string (handles richText, formula results, hyperlinks). */
-const cellText = (v) => {
+export const cellText = (v) => {
   if (v == null) return "";
   if (typeof v === "string") return v;
   if (typeof v === "object") {
@@ -23,7 +23,7 @@ const cellText = (v) => {
 };
 
 /** Header cell → canonical column name: trim + strip required/optional markers. */
-const normalizeHeader = (s) =>
+export const normalizeHeader = (s) =>
   cellText(s)
     .replace(/\s*\((opt|cond)\)\s*$/i, "")
     .replace(/\s*\*+\s*$/, "")

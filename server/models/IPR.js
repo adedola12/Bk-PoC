@@ -43,6 +43,8 @@ const iprSchema = new mongoose.Schema(
     logistics: { type: Map, of: iprFieldSchema, default: {} },
     compliance: { type: Map, of: iprFieldSchema, default: {} },
     mediaRefs: [{ type: String }],
+    // Twyford short-circuit: full template column map (lossless round-trip payload)
+    templateRow: { type: Object, default: null },
     // classification (Stage 4) and variant lineage (Stage 6) â€” filled later
     taxonomyPath: { type: String, default: null },
     taxonomyConfidence: { type: Number, default: null },

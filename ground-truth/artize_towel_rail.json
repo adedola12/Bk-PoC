@@ -1,0 +1,20 @@
+{
+  "file": "Towel_Rail_Holder_Data_Sheet.pdf",
+  "status": "draft_pending_verification",
+  "products": [
+    {
+      "productCode": "QUA-CHR-61711",
+      "fields": {
+        "brand": "Artize",
+        "subBrand": null,
+        "productName": "Towel Rail 600mm Long",
+        "color": "Chrome",
+        "dimensions1": 600,
+        "dimensions2": 550,
+        "dimensions3": 74,
+        "finishes": null,
+        "material": null
+      }
+    }
+  ]
+}

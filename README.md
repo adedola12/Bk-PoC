@@ -53,8 +53,10 @@ npm run probe               # Milestone A vision cost/latency probe (HD_BOOKET s
 
 ## Milestone status
 
-- **A — Skeleton + Stage 0 triage**: in progress (this gate: T1 + T8 + vision probe)
-- B — Clean extraction + emitter round-trip + anomaly injector: pending
-- C — Classification & registries: pending
+- **A — Skeleton + Stage 0 triage**: ✅ Gate G1 passed 18-Jul-2026 (T1 10/10, T8 100%, vision probe green)
+- **B — Clean extraction + emitter round-trip + anomaly injector**: ✅ built 18-Jul-2026 — awaiting Gate G2
+  accuracy review (interim T2 94.7%; sole miss is the Artize⊂Jaquar lineage, by design a Stage 5 concern;
+  Twyford round-trip lossless; injector seeded+deterministic; SG_BK → Satkay vendor profile parsed via D11)
+- C — Classification & registries: next
 - D — Hostile sources (vision path): pending
 - E — Content, emission, pricing: pending

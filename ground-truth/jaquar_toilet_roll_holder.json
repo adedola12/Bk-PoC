@@ -1,0 +1,19 @@
+{
+  "file": "Toilet_Roll_Holder_Data_sheet.pdf",
+  "status": "draft_pending_verification",
+  "products": [
+    {
+      "productCode": "AKP-CHR-35751P",
+      "fields": {
+        "brand": "Jaquar",
+        "productName": "Toilet Roll Holder",
+        "color": "Chrome",
+        "finishes": ["ABR", "ACR", "BCH", "BLM", "GDS", "GLD", "GRF", "SSF", "WHM"],
+        "material": null,
+        "dimensions1": null,
+        "dimensions2": null,
+        "dimensions3": null
+      }
+    }
+  ]
+}
