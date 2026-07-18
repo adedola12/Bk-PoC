@@ -61,5 +61,9 @@ npm run probe               # Milestone A vision cost/latency probe (HD_BOOKET s
   each, derived SKUs labelled); 3-method classifier 3/3 nodes; brand registry 3/3 canonical
   (Artize ⊂ Jaquar resolved by QUA- code signature); T2 post-Stage5 = 100% clean sources;
   D14/D15 proposed in docs/DECISIONS.md pending ratification
-- D — Hostile sources (vision path): next
-- E — Content, emission, pricing: pending
+- **D — Hostile sources**: ✅ built 18-Jul-2026 — **T4 PASS**: pairing QA (value-run-length analysis)
+  forces both QRG pages to panel-segmented vision; A1 ("2700 V" rated power) and A3 (part number
+  0601513000 on multiple products) caught from the real source; 10/10 seeded errors flagged (100%
+  recall, detectable-class injector); HD handbook chunked text extraction with cross-chunk
+  part-number dedupe; anomalies become ReviewItems (§6.1)
+- E — Content, emission, pricing: next (final milestone)

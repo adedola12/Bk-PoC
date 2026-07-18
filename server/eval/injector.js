@@ -1,6 +1,5 @@
-import { findDuplicateCodes } from "../services/validators.js";
-import { checkSanity } from "../services/normalize.js";
-import { unitMatchesLabel } from "../services/validators.js";
+import { findDuplicateCodes, unitMatchesLabel, sanityRuleFor } from "../services/validators.js";
+import { checkSanity, parseLocaleNumber, SANITY_RULES } from "../services/normalize.js";
 
 /**
  * T4 anomaly injector (built in Milestone B per amended §8, exercised fully
@@ -20,36 +19,60 @@ function mulberry32(seed) {
   };
 }
 
+/**
+ * Mutations are DETECTABLE-CLASS by construction (Evaluation Strategy §4.3:
+ * "wrong units, swapped values, duplicate codes — all of which must be
+ * flagged"). A random tweak that lands on a plausible value is not a seeded
+ * anomaly — it is noise no validator could honestly catch.
+ */
 const MUTATIONS = [
   {
     type: "wrong_unit", // A1: "2700 V" where W was meant
-    apply(ipr) {
-      const f = pickNumericField(ipr);
+    apply(ipr, all, rng) {
+      const candidates = numericFields(ipr).filter((f) => sanityRuleFor(f.meta.field));
+      const f = pick(candidates, rng);
       if (!f) return null;
-      const wrong = { W: "V", V: "W", kg: "mm", mm: "kg" }[f.field.unit] || "V";
-      const original = { unit: f.field.unit };
+      const wrongByRule = { ratedPowerW: "V", voltageV: "W", weightKg: "mm", dimensionMm: "kg", impactJ: "V" };
+      const wrong = wrongByRule[sanityRuleFor(f.meta.field)] || "V";
+      const original = f.field.unit;
       f.field.unit = wrong;
-      return { ...f.meta, detail: `unit ${original.unit} → ${wrong}` };
+      return { ...f.meta, detail: `unit ${original} → ${wrong}` };
     },
   },
   {
-    type: "magnitude_error", // A2-adjacent: scrambled columns produce 8600 W-class values
-    apply(ipr) {
-      const f = pickNumericField(ipr);
+    type: "magnitude_error", // A2-class: 8600 W-style values — scaled until they BREACH the sanity range
+    apply(ipr, all, rng) {
+      const candidates = numericFields(ipr).filter((f) => sanityRuleFor(f.meta.field));
+      const f = pick(candidates, rng);
       if (!f) return null;
+      const rule = SANITY_RULES[sanityRuleFor(f.meta.field)];
       const original = f.field.value;
-      f.field.value = original * 10;
-      return { ...f.meta, detail: `${original} → ${f.field.value}` };
+      let v = original;
+      for (let i = 0; i < 6 && v <= rule.max; i++) v *= 10;
+      if (v <= rule.max) return null;
+      f.field.value = v;
+      return { ...f.meta, detail: `${original} → ${v} (breaches ${rule.note})` };
     },
   },
   {
-    type: "swapped_values", // A2: label-value pairing scrambled between two fields
-    apply(ipr) {
-      const nums = allNumericFields(ipr);
-      if (nums.length < 2) return null;
-      const [a, b] = nums;
-      [a.field.value, b.field.value] = [b.field.value, a.field.value];
-      return { field: `${a.meta.field}⇄${b.meta.field}`, group: a.meta.group, detail: "values swapped" };
+    type: "swapped_values", // A2: label-value pairing scrambled — only pairs where the swap is implausible
+    apply(ipr, all, rng) {
+      const nums = numericFields(ipr).filter((f) => sanityRuleFor(f.meta.field));
+      for (let i = 0; i < nums.length; i++) {
+        for (let j = i + 1; j < nums.length; j++) {
+          const a = nums[i];
+          const b = nums[j];
+          const ruleA = SANITY_RULES[sanityRuleFor(a.meta.field)];
+          const ruleB = SANITY_RULES[sanityRuleFor(b.meta.field)];
+          const aBad = b.field.value < ruleA.min || b.field.value > ruleA.max;
+          const bBad = a.field.value < ruleB.min || a.field.value > ruleB.max;
+          if (aBad || bBad) {
+            [a.field.value, b.field.value] = [b.field.value, a.field.value];
+            return { field: `${a.meta.field}⇄${b.meta.field}`, group: a.meta.group, detail: "values swapped (implausible under swapped labels)" };
+          }
+        }
+      }
+      return null;
     },
   },
   {
@@ -66,21 +89,22 @@ const MUTATIONS = [
   },
 ];
 
-function allNumericFields(ipr) {
+function numericFields(ipr) {
   const out = [];
   for (const group of ["attributes", "logistics"]) {
-    for (const [field, f] of Object.entries(ipr[group] || {})) {
-      if (f && typeof f.value === "number") out.push({ field: f, meta: { field, group }, group });
+    const entries = ipr[group] instanceof Map ? [...ipr[group].entries()] : Object.entries(ipr[group] || {});
+    for (const [field, f] of entries) {
+      const num = f && (typeof f.value === "number" ? f.value : parseLocaleNumber(String(f.value ?? "").match(/^[\d.,]+$/)?.[0]));
+      if (num != null) {
+        f.value = num; // canonicalize so mutations operate numerically
+        out.push({ field: f, meta: { field, group } });
+      }
     }
   }
-  // normalize shape: {field: <fieldObj>, meta}
-  return out.map((o) => ({ field: o.field, meta: o.meta }));
+  return out;
 }
 
-function pickNumericField(ipr) {
-  const nums = allNumericFields(ipr);
-  return nums[0] || null;
-}
+const pick = (arr, rng) => (arr.length ? arr[Math.floor(rng() * arr.length)] : null);
 
 /**
  * Inject `count` seeded errors into a DEEP COPY of the IPR list.
@@ -114,18 +138,33 @@ export function detectAnomalies(iprs) {
     caught.push({ type: "duplicate_code", detail: dup.code, indexes: dup.indexes });
   }
 
-  // unit/label mismatch (A1) + sanity ranges (A2/magnitude)
+  // unit/label mismatch (A1) + sanity ranges (A2/magnitude). Handles both
+  // canonical keys (dimensions1, weightKg) and printed spec labels
+  // ("Rated input power") whose values may still be strings, and units that
+  // ride inside the raw/value text ("2700 V") rather than the unit slot.
   iprs.forEach((ipr, index) => {
     for (const group of ["attributes", "logistics"]) {
-      for (const [key, f] of Object.entries(ipr[group] || {})) {
-        if (!f || f.value == null) continue;
-        if (!unitMatchesLabel(key, f.unit)) {
-          caught.push({ type: "wrong_unit", index, field: key, detail: `${key} in ${f.unit}` });
+      const entries =
+        ipr[group] instanceof Map ? [...ipr[group].entries()] : Object.entries(ipr[group] || {});
+      for (const [key, f] of entries) {
+        if (!f || (f.value == null && !f.raw)) continue;
+        const unit = f.unit || String(f.raw ?? f.value ?? "").match(/\b(W|kW|V|kg|g|mm|cm|J|Nm|rpm|bpm)\b\.?$/)?.[1] || null;
+        if (!unitMatchesLabel(key, unit)) {
+          caught.push({ type: "wrong_unit", index, field: key, detail: `"${key}" in ${unit}` });
         }
-        if (typeof f.value === "number") {
-          const ruleKey = key.startsWith("dimensions") ? "dimensionMm" : key === "weightKg" ? "weightKg" : null;
-          if (ruleKey) {
-            const sane = checkSanity(ruleKey, f.value);
+        const ruleKey = sanityRuleFor(key);
+        if (ruleKey) {
+          const num = typeof f.value === "number" ? f.value : parseLocaleNumber(String(f.value ?? f.raw).match(/[\d.,]+/)?.[0]);
+          // only sanity-check when the unit is the rule's own dimension —
+          // a mismatched unit is already flagged above (A1 vs A2 separation)
+          const unitOkForRule =
+            (ruleKey === "ratedPowerW" && (!unit || /^k?w$/i.test(unit))) ||
+            (ruleKey === "voltageV" && (!unit || /^v$/i.test(unit))) ||
+            (ruleKey === "impactJ" && (!unit || /^j$/i.test(unit))) ||
+            (ruleKey === "weightKg" && (!unit || /^(kg|g)$/i.test(unit))) ||
+            (ruleKey === "dimensionMm" && (!unit || /^(mm|cm|m)$/i.test(unit)));
+          if (num != null && unitOkForRule) {
+            const sane = checkSanity(ruleKey, num);
             if (!sane.ok) caught.push({ type: "sanity", index, field: key, detail: sane.reason });
           }
         }

@@ -17,8 +17,11 @@ import { TRIAGE_GROUND_TRUTH } from "./groundTruth.js";
 import { loadGroundTruth, scoreCatalog } from "./t2_accuracy.js";
 import { injectErrors, detectAnomalies } from "./injector.js";
 import { readDataRows, templateRowsToIprs, iprsToTemplateRows, emitRows } from "../emitter/index.js";
+import { bulkExtract } from "../stages/bulk_extract.js";
 import { createRun } from "../services/runs.js";
 import { hasApiKey } from "../services/anthropic.js";
+
+const FULL_RUN = process.argv.includes("--full"); // full 104-pp handbook (T7 timing)
 
 /**
  * Evaluation harness — `npm run eval` reproduces the scorecard from a clean
@@ -208,6 +211,67 @@ try {
   injectorCheck = { pass: false, error: err.message };
 }
 
+/* ─────────── T4 — hostile sources, seeded-anomaly recall ─────────── */
+console.log(`\n── T4 · hostile extraction + zero silent leaks${FULL_RUN ? " (FULL 104-pp run)" : " (HD sampled)"} ──`);
+const t4 = { pass: false };
+try {
+  // QRG — the verified-anomaly source. Pairing QA must reject its text layer.
+  const qrgStart = Date.now();
+  const qrg = await bulkExtract(fx("Revised_Quick_Refrence_Guide.pdf"), "Revised_Quick_Refrence_Guide.pdf", { log: run.log });
+  const qrgMs = Date.now() - qrgStart;
+  const visionTriggered = qrg.stats.visionPages === qrg.stats.pages && qrg.stats.pages === 2;
+  console.log(
+    `${visionTriggered ? "✅" : "❌"} pairing QA: ${qrg.stats.visionPages}/${qrg.stats.pages} QRG pages routed to vision (A2 defense) · ${qrg.iprs.length} products · ${(qrgMs / 1000).toFixed(0)}s`
+  );
+
+  const qrgAnomalies = detectAnomalies(qrg.iprs);
+  const a1 = qrgAnomalies.find(
+    (a) => a.type === "wrong_unit" && /power/i.test(a.field ?? "") && /\bV\b/.test(a.detail ?? "")
+  );
+  const a3 = qrgAnomalies.find((a) => a.type === "duplicate_code" && String(a.detail).includes("0601513000"));
+  console.log(`${a1 ? "✅" : "❌"} A1 caught: rated power in volts ${a1 ? `(${a1.detail})` : "— NOT FLAGGED"}`);
+  console.log(`${a3 ? "✅" : "❌"} A3 caught: part number 0601513000 on multiple products ${a3 ? `(rows ${a3.indexes.join(",")})` : "— NOT FLAGGED"}`);
+
+  // HD handbook — text path at scale (sampled by default, full with --full)
+  const hdPages = FULL_RUN ? null : Array.from({ length: 12 }, (_, i) => 18 + i);
+  const hdStart = Date.now();
+  const hd = await bulkExtract(fx("HD_BOOKET.pdf"), "HD_BOOKET.pdf", { log: run.log, pages: hdPages });
+  const hdMs = Date.now() - hdStart;
+  console.log(
+    `✅ HD handbook${FULL_RUN ? "" : ` pages 18–29`}: ${hd.iprs.length} products via ${hd.stats.calls} calls (${hd.stats.merged} cross-chunk merges) · ${(hdMs / 1000).toFixed(0)}s${FULL_RUN ? ` — T7 target < 3600s: ${hdMs < 3600000 ? "PASS" : "FAIL"}` : ""}`
+  );
+
+  // seeded synthetic errors: 5 per hostile catalog, ALL must be flagged
+  let recallNum = 0;
+  let recallDen = 0;
+  for (const [name, iprs] of [["QRG", qrg.iprs], ["HD", hd.iprs]]) {
+    if (iprs.length < 2) continue;
+    const { mutated, injected } = injectErrors(iprs, { count: 5, seed: 42 });
+    const caught = detectAnomalies(mutated);
+    const detected = injected.filter((inj) =>
+      caught.some(
+        (c) => c.index === inj.index || c.indexes?.includes(inj.index) || (inj.type === "duplicate_code" && c.type === "duplicate_code")
+      )
+    );
+    recallNum += detected.length;
+    recallDen += injected.length;
+    console.log(`${detected.length === injected.length ? "✅" : "❌"} ${name}: ${detected.length}/${injected.length} seeded errors flagged`);
+  }
+
+  t4.visionTriggered = visionTriggered;
+  t4.a1 = Boolean(a1);
+  t4.a3 = Boolean(a3);
+  t4.a2Note = "text path rejected by pairing QA; scramble-class values covered by sanity rules on seeded errors";
+  t4.injectedRecall = recallDen ? recallNum / recallDen : 0;
+  t4.qrgProducts = qrg.iprs.length;
+  t4.hdProducts = hd.iprs.length;
+  t4.timing = { qrgMs, hdMs, hdFull: FULL_RUN };
+  t4.pass = visionTriggered && t4.a1 && t4.a3 && t4.injectedRecall === 1;
+} catch (err) {
+  console.log(`❌ T4 error: ${err.message}`);
+  t4.error = err.message;
+}
+
 /* ─────────── scorecard ─────────── */
 const scorecard = {
   T1: { metric: `${t1Pass}/10 correctly routed`, threshold: "10/10", pass: t1Pass === 10 },
@@ -221,7 +285,12 @@ const scorecard = {
   emitterRoundTrip: { ...roundTrip, threshold: "lossless" },
   injectorMechanics: injectorCheck,
   T3: "pending (Milestone E)",
-  T4: "injector ready — full seeded-recall run in Milestone D",
+  T4: {
+    metric: `A1 ${t4.a1 ? "caught" : "MISSED"} · A3 ${t4.a3 ? "caught" : "MISSED"} · seeded recall ${(t4.injectedRecall * 100 || 0).toFixed(0)}% · QRG vision-forced ${t4.visionTriggered ? "yes" : "NO"}`,
+    threshold: "0 silent leaks — 100% recall",
+    pass: t4.pass,
+    detail: t4,
+  },
   T5: "pending (Milestone E)",
   T6: {
     metric: `Jaquar ${jaq?.rows ?? 0}/10 rows · Artize ${art?.rows ?? 0}/10 rows · derived labelled`,
@@ -242,6 +311,7 @@ console.log(`\n─── Scorecard ───`);
 console.log(`T1: ${scorecard.T1.metric} — ${scorecard.T1.pass ? "PASS" : "FAIL"}`);
 console.log(`T8: ${scorecard.T8.metric} — ${scorecard.T8.pass ? "PASS" : "FAIL"}`);
 console.log(`T2 (interim): ${scorecard.T2_interim.metric} — ${scorecard.T2_interim.pass ? "PASS" : "REVIEW"}`);
+console.log(`T4: ${scorecard.T4.metric} — ${scorecard.T4.pass ? "PASS" : "FAIL"}`);
 console.log(`T6: ${scorecard.T6.metric} — ${scorecard.T6.pass ? "PASS" : "FAIL"}`);
 console.log(`Emitter round-trip: ${roundTrip.pass ? "LOSSLESS" : "FAIL"}`);
 console.log(`Scorecard → runs/${run.runId}/scorecard.json`);

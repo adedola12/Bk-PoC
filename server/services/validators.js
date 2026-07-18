@@ -11,7 +11,9 @@
 export function findDuplicateCodes(records) {
   const byCode = new Map();
   records.forEach((r, i) => {
-    const code = (r.productCode || "").trim();
+    // Bosch prints part numbers with spaces ("0 601 513 000") — normalize so
+    // the same code always collides regardless of formatting
+    const code = (r.productCode || "").replace(/\s+/g, "").trim();
     if (!code) return;
     if (!byCode.has(code)) byCode.set(code, []);
     byCode.get(code).push(i);
@@ -19,6 +21,17 @@ export function findDuplicateCodes(records) {
   return [...byCode.entries()]
     .filter(([, idxs]) => idxs.length > 1)
     .map(([code, indexes]) => ({ code, indexes }));
+}
+
+/** Spec label (as printed) → sanity-rule key, e.g. "Rated input power" → ratedPowerW. */
+export function sanityRuleFor(label) {
+  const l = String(label || "").toLowerCase();
+  if (/impact\s*energy/.test(l)) return "impactJ";
+  if (/power/.test(l)) return "ratedPowerW";
+  if (/voltage/.test(l)) return "voltageV";
+  if (/weight/.test(l)) return "weightKg";
+  if (/dimension|length|width|height|depth/.test(l) || /^dimensions\d$/.test(l)) return "dimensionMm";
+  return null;
 }
 
 /**

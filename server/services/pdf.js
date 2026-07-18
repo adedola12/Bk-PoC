@@ -35,6 +35,40 @@ export async function extractText(filePath, { maxPages = Infinity, only = null }
 }
 
 /**
+ * Positional text extraction — items with page coordinates, for the
+ * label-value pairing QA (Design Doc §3 Stage 1). pdfjs y-origin is
+ * bottom-left; we keep raw transform values (x=tx[4], y=tx[5]).
+ * @returns {Promise<{pageCount:number, pages:Array<{page:number, width:number, height:number,
+ *   items:Array<{str:string, x:number, y:number}>}>}>}
+ */
+export async function extractTextPositions(filePath, { only = null, maxPages = Infinity } = {}) {
+  const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const data = new Uint8Array(fs.readFileSync(filePath));
+  const doc = await getDocument({ data, useSystemFonts: true }).promise;
+  const targets = only
+    ? only.filter((n) => n >= 1 && n <= doc.numPages)
+    : Array.from({ length: Math.min(doc.numPages, maxPages) }, (_, i) => i + 1);
+  const pages = [];
+  for (const i of targets) {
+    const page = await doc.getPage(i);
+    const viewport = page.getViewport({ scale: 1 });
+    const content = await page.getTextContent();
+    pages.push({
+      page: i,
+      width: viewport.width,
+      height: viewport.height,
+      items: content.items
+        .filter((it) => it.str.trim())
+        .map((it) => ({ str: it.str, x: it.transform[4], y: it.transform[5] })),
+    });
+    page.cleanup();
+  }
+  const result = { pageCount: doc.numPages, pages };
+  await doc.destroy();
+  return result;
+}
+
+/**
  * Rasterize selected pages to PNG buffers for vision extraction / D11 snapshots.
  * @param {string} filePath
  * @param {number[]} pageNumbers 1-based
