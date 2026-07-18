@@ -13,19 +13,15 @@ import {
   FiFileText,
 } from "react-icons/fi";
 
-/* ─────────── navigation ─────────── */
+/* ─────────── navigation — full PoC surface (Milestone E) ─────────── */
 const NAV = [
   { to: "/upload", label: "Upload", icon: FiUploadCloud },
   { to: "/triage", label: "Triage Verify", icon: FiCheckSquare },
-];
-
-// Roadmap items — visible but disabled until their milestone lands (§8)
-const SOON = [
-  { label: "Review Queue", icon: FiInbox },
-  { label: "Todo", icon: FiList },
-  { label: "Products", icon: FiBox },
-  { label: "Price Compare", icon: FiTrendingUp },
-  { label: "Run Report", icon: FiFileText },
+  { to: "/review", label: "Review Queue", icon: FiInbox },
+  { to: "/todo", label: "Todo", icon: FiList },
+  { to: "/products", label: "Products", icon: FiBox },
+  { to: "/prices", label: "Price Compare", icon: FiTrendingUp },
+  { to: "/report", label: "Run Report", icon: FiFileText },
 ];
 
 const greeting = () => {
@@ -76,19 +72,6 @@ export default function App() {
             </NavLink>
           ))}
 
-          <p className="px-3 pb-1 pt-5 text-[10px] font-semibold uppercase tracking-widest text-white/35">
-            Coming in this PoC
-          </p>
-          {SOON.map(({ label, icon: Icon }) => (
-            <span
-              key={label}
-              className="flex cursor-not-allowed items-center gap-3 rounded-md px-3 py-2 text-sm text-white/30"
-              title="Lands in a later milestone"
-            >
-              <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden />
-              {label}
-            </span>
-          ))}
         </nav>
 
         <p className="px-5 py-4 text-[11px] leading-relaxed text-white/40">
@@ -107,7 +90,7 @@ export default function App() {
               <p className="text-xs text-slate-500">{today}</p>
             </div>
             <span className="rounded-full border border-bk-gold/40 bg-bk-gold/10 px-3 py-1 text-xs font-semibold text-bk-navy">
-              PoC · Milestone A
+              PoC · Full pipeline
             </span>
           </div>
         </header>

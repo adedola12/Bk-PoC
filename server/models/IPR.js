@@ -55,6 +55,7 @@ const iprSchema = new mongoose.Schema(
       provenance: { type: String, enum: ["adlm_registry", "bk_confirmed", null], default: null },
     },
     variantOf: { type: mongoose.Schema.Types.ObjectId, ref: "IPR", default: null },
+    variantOfCode: { type: String, default: null }, // base product code (media/lineage inheritance)
     variantLabel: { type: String, default: null }, // e.g. "derived_unverified"
     disposition: { type: String, enum: ["PASS", "REVIEW", "TODO", null], default: null },
   },

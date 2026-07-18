@@ -6,6 +6,12 @@ import Upload from "./pages/Upload.jsx";
 import TriageVerify from "./pages/TriageVerify.jsx";
 import "./index.css";
 
+// heavier pages code-split (ADLM pattern)
+const lazyPage = (file) => async () => {
+  const mod = await import(`./pages/${file}.jsx`);
+  return { element: <mod.default /> };
+};
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -14,6 +20,11 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/upload" replace /> },
       { path: "upload", element: <Upload /> },
       { path: "triage", element: <TriageVerify /> },
+      { path: "review", lazy: lazyPage("ReviewQueue") },
+      { path: "todo", lazy: lazyPage("Todo") },
+      { path: "products", lazy: lazyPage("Products") },
+      { path: "prices", lazy: lazyPage("PriceCompare") },
+      { path: "report", lazy: lazyPage("RunReport") },
       { path: "*", element: <Navigate to="/upload" replace /> },
     ],
   },

@@ -4,6 +4,11 @@
  */
 export const THRESHOLDS = {
   requiredFieldPass: 0.85, // required template field ≥ this → counts toward PASS
+  // D18 (proposed): fields whose method is "derived" (drawing-read dims,
+  // substituted finish codes) gate at a lower bar BECAUSE they are visibly
+  // labelled derived in the output and UI — mirroring D5's derived_unverified
+  // SKUs, which emit labelled rather than blocked.
+  derivedFieldPass: 0.6,
   triageAuto: 0.8, // Stage 0: below this → human triage queue, never guessed
 };
 

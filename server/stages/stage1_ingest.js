@@ -41,5 +41,12 @@ export async function ingestFile(filePath) {
     return { kind: "docx_text", text: await extractDocxText(filePath) };
   }
 
+  if (ext === ".html" || ext === ".htm") {
+    // D16 — web page source: the page text is the document
+    const fs = await import("node:fs");
+    const { htmlToText } = await import("../services/weburl.js");
+    return { kind: "html_text", text: htmlToText(fs.readFileSync(filePath, "utf8")) };
+  }
+
   throw new Error(`no ingestion reader for ${ext}`);
 }

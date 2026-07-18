@@ -38,8 +38,9 @@ router.post("/:uploadId/extract", async (req, res, next) => {
 
     let rawIprs;
     let bulkStats = null;
-    if (label === "catalogue") {
-      // hostile path: pairing QA routes pages to text chunks or vision panels
+    const isHtml = /\.html?$/i.test(upload.storedPath);
+    if (label === "catalogue" && !isHtml) {
+      // hostile PDF path: pairing QA routes pages to text chunks or vision panels
       const bulk = await bulkExtract(upload.storedPath, upload.originalName, { log: run.log });
       rawIprs = bulk.iprs;
       bulkStats = { ...bulk.stats, qa: bulk.qa.pages };
@@ -91,6 +92,7 @@ router.post("/:uploadId/extract", async (req, res, next) => {
         taxonomyConfidence: ipr.taxonomyConfidence ?? null,
         taxonomyIds: ipr.taxonomyIds ?? {},
         variantLabel: ipr.variantLabel ?? null,
+        variantOfCode: ipr.variantOfCode ?? null,
       });
       // §6.1 — every flag becomes a review item, never silently dropped
       for (const f of ipr.flags || []) {

@@ -54,6 +54,18 @@ export async function extractIprs(ingested, sourceFile, ctx = {}) {
     return templateRowsToIprs(ingested.rows, sourceFile);
   }
 
+  if (ingested.kind === "html_text") {
+    // D16 web page → same extraction contract, no drawing pass
+    const json = await callClaudeJSON({
+      system: EXTRACT_SYSTEM,
+      messages: [{ role: "user", content: `Web page: ${sourceFile}\n\n${ingested.text.slice(0, 30000)}` }],
+      maxTokens: 6000,
+      log: ctx.log,
+      tag: `extract:${sourceFile}`,
+    });
+    return (json.products || []).map((p) => modelProductToIpr(p, sourceFile));
+  }
+
   if (ingested.kind === "pdf_text") {
     const text = ingested.pages.map((p) => `[page ${p.page}] ${p.text}`).join("\n").slice(0, 30000);
     const json = await callClaudeJSON({
@@ -68,9 +80,11 @@ export async function extractIprs(ingested, sourceFile, ctx = {}) {
     for (const ipr of iprs) reconcileRangeFields(ipr, text);
 
     // ── drawing pass: dimension callouts live in the technical drawing, not
-    // the text layer (Jaquar/Artize case). Drawing-read dims are method
-    // "derived" and flagged (D5 / §5).
-    if (withDrawingPass && iprs.length === 1 && missingDims(iprs[0])) {
+    // the text layer (Jaquar/Artize case). Runs when dims are MISSING (fills
+    // them, method "derived") or LOW-CONFIDENCE (confirmation: two independent
+    // methods agreeing raises confidence — the D1 principle applied to
+    // extraction; disagreement flags, never overwrites).
+    if (withDrawingPass && iprs.length === 1 && (missingDims(iprs[0]) || lowDims(iprs[0]))) {
       try {
         const [first] = await ingested.raster([1], { scale: 2 });
         if (first) {
@@ -149,6 +163,12 @@ function modelProductToIpr(p, sourceFile) {
 const missingDims = (ipr) =>
   !ipr.attributes.dimensions1 || ipr.attributes.dimensions1.value == null;
 
+const lowDims = (ipr) =>
+  ["dimensions1", "dimensions2", "dimensions3"].some((k) => {
+    const f = ipr.attributes[k];
+    return f?.value != null && f.confidence < 0.85;
+  });
+
 /**
  * Deterministic range reconciliation: the model sometimes truncates a range
  * to one endpoint. When the SOURCE TEXT provably contains a pressure range,
@@ -184,8 +204,29 @@ function applyDrawingDims(ipr, dj, sourceFile) {
           confidence: conf,
           method: "derived", // drawing-read dimensions are derived + UI-flagged (§5)
         };
+  const drawingVals = [dims.d1, dims.d2, dims.d3].filter((n) => n != null);
   for (const [slot, val] of [["dimensions1", dims.d1], ["dimensions2", dims.d2], ["dimensions3", dims.d3]]) {
-    const field = mk(val);
-    if (field && !ipr.attributes[slot]?.value) ipr.attributes[slot] = field;
+    const existing = ipr.attributes[slot];
+    if (!existing?.value) {
+      const field = mk(val);
+      if (field) ipr.attributes[slot] = field;
+      continue;
+    }
+    // confirmation mode: the text layer already had a value — agreement with
+    // ANY drawing callout (slot order can differ) raises confidence;
+    // total disagreement flags the field. Never overwrite (§6.1).
+    const numeric = Number(existing.value);
+    if (!Number.isFinite(numeric) || !drawingVals.length) continue;
+    const agrees = drawingVals.some((d) => Math.abs(d - numeric) <= Math.max(2, numeric * 0.02));
+    if (agrees) {
+      existing.confidence = Math.max(existing.confidence, 0.9);
+    } else {
+      ipr.flags = ipr.flags || [];
+      ipr.flags.push({
+        field: slot,
+        reason: "anomaly_rule",
+        detail: `text says ${numeric} but drawing callouts read ${drawingVals.join("/")}`,
+      });
+    }
   }
 }

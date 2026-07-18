@@ -66,4 +66,10 @@ npm run probe               # Milestone A vision cost/latency probe (HD_BOOKET s
   0601513000 on multiple products) caught from the real source; 10/10 seeded errors flagged (100%
   recall, detectable-class injector); HD handbook chunked text extraction with cross-chunk
   part-number dedupe; anomalies become ReviewItems (§6.1)
-- E — Content, emission, pricing: next (final milestone)
+- **E — Content, emission, pricing**: ✅ built 18-Jul-2026 — Stage 7 category-profile mapping +
+  Cloudinary media pairing; Stage 8 house-style generation with deterministic fact-check
+  (poisoned-copy self-test); Stage 9 gate with D17 exemptions + D18 derived-field threshold;
+  Stage 10 template emission (42/42 rows, 100% zero-touch); D4/D10 price ledger with
+  append-only enforcement; D16 weblink ingestion; ReviewQueue/Todo/Products/PriceCompare/RunReport UI.
+  **Scorecard: T1 ✅ T3 ✅ (100%) T4 ✅ T5 ✅ T6 ✅ T7 ✅ T8 ✅ · T2 interim 94.7% pending
+  human ground-truth verification.**

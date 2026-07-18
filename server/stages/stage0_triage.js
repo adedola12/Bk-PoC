@@ -99,6 +99,11 @@ export async function triageFile(filePath, ctx = {}) {
   } else if (ext === ".docx") {
     excerpt = (await extractDocxText(filePath)).slice(0, 8000);
     signals.textDensity = excerpt.length;
+  } else if (ext === ".html" || ext === ".htm") {
+    // D16 — URL-ingested web page: classify its text like any document
+    const { htmlToText } = await import("../services/weburl.js");
+    excerpt = htmlToText(fs.readFileSync(filePath, "utf8")).slice(0, 8000);
+    signals.textDensity = excerpt.length;
   } else if (ext === ".xlsx" || ext === ".xlsm") {
     excerpt = JSON.stringify(signals.templateSignature ?? {});
   } else {

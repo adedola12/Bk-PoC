@@ -31,6 +31,7 @@ const uploadLedgerSchema = new mongoose.Schema(
     mimeType: { type: String },
     size: { type: Number },
     sha256: { type: String, index: true },
+    sourceUrl: { type: String, default: null }, // D16 — URL-ingested provenance
     runId: { type: String, index: true },
     triage: { type: triageSchema, default: {} },
     // filled at Stage 10: identity keys of rows emitted from this file

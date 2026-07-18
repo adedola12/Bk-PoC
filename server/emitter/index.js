@@ -113,7 +113,9 @@ export async function readDataRows(filePath) {
     for (const c of schema.columns) {
       const text = cellText(row.getCell(c.col).value).trim();
       obj[c.name] = text;
-      if (text) hasValue = true;
+      // formula columns auto-fill placeholder values ("0") on every
+      // pre-formatted template row — they don't make a row "data"
+      if (text && !c.formula) hasValue = true;
     }
     if (hasValue) rows.push({ row: r, values: obj });
   }

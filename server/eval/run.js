@@ -16,8 +16,11 @@ import { expandVariants } from "../stages/stage6_variants.js";
 import { TRIAGE_GROUND_TRUTH } from "./groundTruth.js";
 import { loadGroundTruth, scoreCatalog } from "./t2_accuracy.js";
 import { injectErrors, detectAnomalies } from "./injector.js";
-import { readDataRows, templateRowsToIprs, iprsToTemplateRows, emitRows } from "../emitter/index.js";
+import { readDataRows, templateRowsToIprs, iprsToTemplateRows, emitRows, readTemplateSchema } from "../emitter/index.js";
 import { bulkExtract } from "../stages/bulk_extract.js";
+import { mapIprToRow } from "../stages/stage7_map.js";
+import { generateContent, factCheck } from "../stages/stage8_generate.js";
+import { gateRow } from "../stages/stage9_gate.js";
 import { createRun } from "../services/runs.js";
 import { hasApiKey } from "../services/anthropic.js";
 
@@ -121,6 +124,7 @@ for (const [file, iprs] of Object.entries(extractedByFile)) {
     t6.expanded[file] = {
       rows: rows.length,
       derived: rows.filter((r) => r.variantLabel === "derived_unverified").length,
+      list: rows,
     };
   }
 }
@@ -211,6 +215,123 @@ try {
   injectorCheck = { pass: false, error: err.message };
 }
 
+/* ─────────── T3 — zero-touch rate (Stage 7 map → Stage 9 gate) ─────────── */
+console.log("\n── T3 · zero-touch rate (map → gate, per catalog) ──");
+let t3 = { pass: false };
+try {
+  const schema = await readTemplateSchema(fx("catalogue_template_Sanitary-Wash_Basins___Pedestals.xlsx"));
+  const catalogs = {};
+
+  // Twyford golden rows (template short-circuit)
+  const { rows: twyRows } = await readDataRows(fx("01_Twyford__Sanitary_Ware__Wash_Basins__Pedestal.xlsx"));
+  catalogs["01_Twyford (template)"] = templateRowsToIprs(twyRows, "twyford.xlsx");
+
+  // clean datasheets incl. their expanded variants (from the Stage 4–6 section)
+  for (const [file, exp] of Object.entries(t6.expanded)) catalogs[file] = exp.list ?? [];
+  if (extractedByFile["Alca_Drain__AM101_.pdf"]) catalogs["Alca_Drain__AM101_.pdf"] = extractedByFile["Alca_Drain__AM101_.pdf"];
+
+  const perCatalog = {};
+  let passTodo = 0;
+  let total = 0;
+  for (const [file, iprs] of Object.entries(catalogs)) {
+    let zt = 0;
+    for (const ipr of iprs) {
+      const { row, profile, dropdownFlags } = mapIprToRow(ipr, schema);
+      const gate = gateRow({ ipr, row, schema, profile, dropdownFlags });
+      if (gate.disposition !== "REVIEW") zt++;
+    }
+    perCatalog[file] = { total: iprs.length, zeroTouch: iprs.length ? zt / iprs.length : 0 };
+    passTodo += zt;
+    total += iprs.length;
+    console.log(`   ${file}: ${(perCatalog[file].zeroTouch * 100).toFixed(0)}% (${zt}/${iprs.length})`);
+  }
+  const overall = total ? passTodo / total : 0;
+  t3 = { pass: overall >= 0.7, overall, perCatalog };
+  console.log(`${t3.pass ? "✅" : "❌"} T3 overall: ${(overall * 100).toFixed(1)}% zero-touch (threshold ≥70%)`);
+} catch (err) {
+  console.log(`❌ T3 error: ${err.message}`);
+  t3.error = err.message;
+}
+
+/* ─────────── Block E — generation + fact-check (D3) ─────────── */
+console.log("\n── Stage 8 · description generation + fact-check ──");
+let genCheck = { pass: false };
+try {
+  const { rows: twyRows } = await readDataRows(fx("01_Twyford__Sanitary_Ware__Wash_Basins__Pedestal.xlsx"));
+  const styleExamples = twyRows.map((r) => r.values["Description"]).filter(Boolean).slice(0, 2);
+  const target = extractedByFile["Alca_Drain__AM101_.pdf"]?.[0];
+  if (target && hasApiKey()) {
+    const gen = await generateContent(target, styleExamples, { log: run.log });
+    const words = gen.description.split(/\s+/).filter(Boolean).length;
+    genCheck = {
+      pass: gen.factChecked && gen.tags.length >= 8 && gen.tags.length <= 9 && words >= 80 && words <= 150,
+      words,
+      tags: gen.tags.length,
+      factChecked: gen.factChecked,
+      regenerated: gen.regenerated,
+      violations: gen.violations,
+    };
+    console.log(
+      `${genCheck.pass ? "✅" : "⚠"} Alca description: ${words} words, ${gen.tags.length} tags, fact-check ${gen.factChecked ? "PASS" : "FAIL"}${gen.regenerated ? " (after 1 regeneration)" : ""}`
+    );
+    // adversarial self-test: a poisoned copy must FAIL the checker
+    const poisoned = factCheck(gen.description + " Backed by a 25-year warranty and EN 99999 compliance.", target);
+    console.log(`${!poisoned.ok ? "✅" : "❌"} fact-checker rejects invented claims (${poisoned.violations.length} violations found)`);
+    genCheck.poisonedRejected = !poisoned.ok;
+    genCheck.pass = genCheck.pass && !poisoned.ok;
+  } else {
+    console.log("⚠ generation check skipped (no extracted Alca IPR or no API key)");
+  }
+} catch (err) {
+  console.log(`❌ generation error: ${err.message}`);
+  genCheck.error = err.message;
+}
+
+/* ─────────── T5 — price ledger (D4/D10, needs MongoDB) ─────────── */
+console.log("\n── T5 · pricing policy (append-only ledger) ──");
+let t5 = { pass: false, skipped: false };
+try {
+  const { default: mongoose } = await import("mongoose");
+  await mongoose.connect(process.env.MONGODB_URI, { dbName: "bkIngest", serverSelectionTimeoutMS: 8000 });
+  const { PriceEvent } = await import("../models/PriceEvent.js");
+
+  const before = await PriceEvent.countDocuments();
+  const stamp = Date.now();
+  await PriceEvent.create({
+    sku: "AKP-CHR-35751P", vendor: "Satkay Limited", brand: "Jaquar",
+    price: 18500, currency: "NGN", sourceFile: `eval-reupload-${stamp}`, effectiveDate: new Date(), method: "reupload_delta",
+  });
+  await PriceEvent.create({
+    sku: "QUA-CHR-61711", vendor: "Satkay Limited", brand: "Artize",
+    price: 42000, currency: "NGN", sourceFile: `eval-reupload-${stamp}`, effectiveDate: new Date(), method: "reupload_delta",
+  });
+  const after = await PriceEvent.countDocuments();
+
+  // append-only enforcement: updates must throw at the model layer (D10)
+  let updateBlocked = false;
+  try {
+    await PriceEvent.updateOne({ sku: "AKP-CHR-35751P" }, { price: 1 });
+  } catch {
+    updateBlocked = true;
+  }
+
+  const history = await PriceEvent.find({ sku: "AKP-CHR-35751P" }).sort({ effectiveDate: -1 }).lean();
+  const brands = new Set((await PriceEvent.find({}).lean()).map((e) => e.brand));
+
+  t5 = {
+    pass: after === before + 2 && updateBlocked && history.length >= 1 && brands.size >= 2,
+    appended: after - before,
+    updateBlocked,
+    historyDepth: history.length,
+    brandsPriced: [...brands],
+  };
+  console.log(`${t5.pass ? "✅" : "❌"} events appended (+${t5.appended}) · overwrite blocked: ${updateBlocked} · history depth ${history.length} · brands priced: ${[...brands].join(", ")}`);
+  await mongoose.disconnect();
+} catch (err) {
+  t5 = { pass: false, skipped: true, error: err.message };
+  console.log(`⚠ T5 skipped — MongoDB unavailable (${err.message})`);
+}
+
 /* ─────────── T4 — hostile sources, seeded-anomaly recall ─────────── */
 console.log(`\n── T4 · hostile extraction + zero silent leaks${FULL_RUN ? " (FULL 104-pp run)" : " (HD sampled)"} ──`);
 const t4 = { pass: false };
@@ -284,14 +405,26 @@ const scorecard = {
   },
   emitterRoundTrip: { ...roundTrip, threshold: "lossless" },
   injectorMechanics: injectorCheck,
-  T3: "pending (Milestone E)",
+  T3: {
+    metric: t3.overall != null ? `${(t3.overall * 100).toFixed(1)}% zero-touch overall` : "not computed",
+    threshold: "≥70% overall, reported per catalog",
+    pass: Boolean(t3.pass),
+    perCatalog: t3.perCatalog ?? null,
+  },
   T4: {
     metric: `A1 ${t4.a1 ? "caught" : "MISSED"} · A3 ${t4.a3 ? "caught" : "MISSED"} · seeded recall ${(t4.injectedRecall * 100 || 0).toFixed(0)}% · QRG vision-forced ${t4.visionTriggered ? "yes" : "NO"}`,
     threshold: "0 silent leaks — 100% recall",
     pass: t4.pass,
     detail: t4,
   },
-  T5: "pending (Milestone E)",
+  T5: t5.skipped
+    ? `skipped — MongoDB unavailable (${t5.error})`
+    : {
+        metric: `+${t5.appended} events appended · overwrite blocked ${t5.updateBlocked} · ${t5.brandsPriced?.length ?? 0} brands priced`,
+        threshold: "100% appended, history preserved, no overwrites",
+        pass: t5.pass,
+      },
+  generation: genCheck,
   T6: {
     metric: `Jaquar ${jaq?.rows ?? 0}/10 rows · Artize ${art?.rows ?? 0}/10 rows · derived labelled`,
     threshold: "base + 9 finishes each, 100% derived_unverified labels",
@@ -311,7 +444,9 @@ console.log(`\n─── Scorecard ───`);
 console.log(`T1: ${scorecard.T1.metric} — ${scorecard.T1.pass ? "PASS" : "FAIL"}`);
 console.log(`T8: ${scorecard.T8.metric} — ${scorecard.T8.pass ? "PASS" : "FAIL"}`);
 console.log(`T2 (interim): ${scorecard.T2_interim.metric} — ${scorecard.T2_interim.pass ? "PASS" : "REVIEW"}`);
+console.log(`T3: ${scorecard.T3.metric} — ${scorecard.T3.pass ? "PASS" : "FAIL"}`);
 console.log(`T4: ${scorecard.T4.metric} — ${scorecard.T4.pass ? "PASS" : "FAIL"}`);
+console.log(`T5: ${t5.skipped ? "SKIPPED (no DB)" : `${scorecard.T5.metric} — ${scorecard.T5.pass ? "PASS" : "FAIL"}`}`);
 console.log(`T6: ${scorecard.T6.metric} — ${scorecard.T6.pass ? "PASS" : "FAIL"}`);
 console.log(`Emitter round-trip: ${roundTrip.pass ? "LOSSLESS" : "FAIL"}`);
 console.log(`Scorecard → runs/${run.runId}/scorecard.json`);

@@ -22,6 +22,29 @@ export const verifyTriage = (id, { confirm, label }) =>
 
 export const previewUrl = (id) => `${API_BASE}/api/triage/${id}/preview`;
 
+export const uploadFromUrl = (url) => api.post("/uploads/url", { url }).then((res) => res.data);
+
+export const extractUpload = (id) => api.post(`/pipeline/${id}/extract`).then((res) => res.data);
+
+export const fetchIprs = () => api.get("/pipeline/iprs").then((res) => res.data);
+
+export const runEmission = () => api.post("/emit", {}).then((res) => res.data);
+
+export const emissionDownloadUrl = (runId, file) => `${API_BASE}/api/emit/download/${runId}/${file}`;
+
+export const fetchReview = () => api.get("/review").then((res) => res.data);
+export const resolveReview = (id, body) => api.post(`/review/${id}/resolve`, body).then((res) => res.data);
+
+export const fetchTodos = () => api.get("/todos").then((res) => res.data);
+export const todoDone = (id) => api.post(`/todos/${id}/done`).then((res) => res.data);
+
+export const fetchCompare = (category) =>
+  api.get("/prices/compare", { params: { category } }).then((res) => res.data);
+export const fetchPriceHistory = (sku) => api.get(`/prices/${encodeURIComponent(sku)}`).then((res) => res.data);
+export const addManualPrice = (body) => api.post("/prices/manual", body).then((res) => res.data);
+
+export const fetchLatestReport = () => api.get("/reports/latest").then((res) => res.data);
+
 /** Server { error } shape → readable message (ADLM error convention). */
 export const errMsg = (err, fallback) => err.response?.data?.error || fallback;
 

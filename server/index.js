@@ -14,6 +14,11 @@ import { ensureBrandsSeeded } from "./stages/stage5_brand.js";
 import uploadRoutes from "./routes/uploads.js";
 import triageRoutes from "./routes/triage.js";
 import pipelineRoutes from "./routes/pipeline.js";
+import emitRoutes from "./routes/emit.js";
+import priceRoutes from "./routes/prices.js";
+import reviewRoutes from "./routes/review.js";
+import todoRoutes from "./routes/todos.js";
+import reportRoutes from "./routes/reports.js";
 
 await connectDB();
 await ensureBrandsSeeded().catch((err) => console.error("brand seed failed:", err.message));
@@ -55,6 +60,11 @@ app.get(["/health", "/healthz"], (req, res) =>
 app.use(["/uploads", "/api/uploads"], uploadRoutes);
 app.use(["/triage", "/api/triage"], triageRoutes);
 app.use(["/pipeline", "/api/pipeline"], pipelineRoutes);
+app.use(["/emit", "/api/emit"], emitRoutes);
+app.use(["/prices", "/api/prices"], priceRoutes);
+app.use(["/review", "/api/review"], reviewRoutes);
+app.use(["/todos", "/api/todos"], todoRoutes);
+app.use(["/reports", "/api/reports"], reportRoutes);
 
 /* ─── error tail ─── */
 app.use((req, res) => res.status(404).json({ error: "Not found" }));
