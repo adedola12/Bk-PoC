@@ -65,6 +65,7 @@ export async function extractIprs(ingested, sourceFile, ctx = {}) {
     });
 
     const iprs = (json.products || []).map((p) => modelProductToIpr(p, sourceFile));
+    for (const ipr of iprs) reconcileRangeFields(ipr, text);
 
     // ── drawing pass: dimension callouts live in the technical drawing, not
     // the text layer (Jaquar/Artize case). Drawing-read dims are method
@@ -147,6 +148,27 @@ function modelProductToIpr(p, sourceFile) {
 
 const missingDims = (ipr) =>
   !ipr.attributes.dimensions1 || ipr.attributes.dimensions1.value == null;
+
+/**
+ * Deterministic range reconciliation: the model sometimes truncates a range
+ * to one endpoint. When the SOURCE TEXT provably contains a pressure range,
+ * re-anchor raw to the verbatim source string (method "rule") so Stage 3
+ * parses the true range. Source-anchored — never invents values.
+ */
+function reconcileRangeFields(ipr, fullText) {
+  const wp = ipr.attributes?.waterPressure;
+  if (!wp || typeof wp.value === "object") return;
+  const functional = fullText.match(/functional[^0-9]{0,60}?([\d.,]+\s*[-–—]\s*[\d.,]+\s*MPa)/i);
+  const any = fullText.match(/pressure[^0-9]{0,60}?([\d.,]+\s*[-–—]\s*[\d.,]+\s*MPa)/i);
+  const hit = functional?.[1] ?? any?.[1];
+  if (hit) {
+    wp.raw = hit.trim();
+    wp.value = null; // stage3 parses the range from raw
+    wp.unit = "MPa";
+    wp.method = "rule";
+    wp.confidence = Math.max(wp.confidence, 0.9);
+  }
+}
 
 function applyDrawingDims(ipr, dj, sourceFile) {
   const dims = dj?.dimensionsMm || {};

@@ -57,6 +57,9 @@ npm run probe               # Milestone A vision cost/latency probe (HD_BOOKET s
 - **B — Clean extraction + emitter round-trip + anomaly injector**: ✅ built 18-Jul-2026 — awaiting Gate G2
   accuracy review (interim T2 94.7%; sole miss is the Artize⊂Jaquar lineage, by design a Stage 5 concern;
   Twyford round-trip lossless; injector seeded+deterministic; SG_BK → Satkay vendor profile parsed via D11)
-- C — Classification & registries: next
-- D — Hostile sources (vision path): pending
+- **C — Classification & registries**: ✅ built 18-Jul-2026 — T6 PASS (Jaquar+Artize → base + 9 finishes
+  each, derived SKUs labelled); 3-method classifier 3/3 nodes; brand registry 3/3 canonical
+  (Artize ⊂ Jaquar resolved by QUA- code signature); T2 post-Stage5 = 100% clean sources;
+  D14/D15 proposed in docs/DECISIONS.md pending ratification
+- D — Hostile sources (vision path): next
 - E — Content, emission, pricing: pending

@@ -10,6 +10,9 @@ import { triageFile } from "../stages/stage0_triage.js";
 import { ingestFile } from "../stages/stage1_ingest.js";
 import { extractIprs } from "../stages/stage2_extract.js";
 import { normalizeIpr } from "../stages/stage3_normalize.js";
+import { classifyIpr } from "../stages/stage4_classify.js";
+import { resolveIprBrand } from "../stages/stage5_brand.js";
+import { expandVariants } from "../stages/stage6_variants.js";
 import { TRIAGE_GROUND_TRUTH } from "./groundTruth.js";
 import { loadGroundTruth, scoreCatalog } from "./t2_accuracy.js";
 import { injectErrors, detectAnomalies } from "./injector.js";
@@ -84,6 +87,56 @@ const t2Scored = t2Results.filter((r) => r.accuracy != null);
 const t2Overall = t2Scored.length
   ? t2Scored.reduce((s, r) => s + r.correct, 0) / t2Scored.reduce((s, r) => s + r.scored, 0)
   : null;
+
+/* ─────────── Stages 4–6 + T6 — classification, brand, variants ─────────── */
+console.log("\n── Stages 4–6 · classification, brand registry, T6 variants ──");
+const EXPECTED_NODES = {
+  "Alca_Drain__AM101_.pdf": "Plumbing & Sanitary Ware > Concealed Cisterns & Installation Systems",
+  "Toilet_Roll_Holder_Data_sheet.pdf": "Plumbing & Sanitary Ware > Bathroom Accessories",
+  "Towel_Rail_Holder_Data_Sheet.pdf": "Plumbing & Sanitary Ware > Bathroom Accessories",
+};
+const EXPECTED_BRANDS = {
+  "Alca_Drain__AM101_.pdf": "Alcadrain",
+  "Toilet_Roll_Holder_Data_sheet.pdf": "Jaquar",
+  "Towel_Rail_Holder_Data_Sheet.pdf": "Artize",
+};
+let classOk = 0;
+let brandOk = 0;
+const t6 = { expanded: {}, pass: false };
+for (const [file, iprs] of Object.entries(extractedByFile)) {
+  for (const ipr of iprs.filter((i) => !i.templateRow)) {
+    const cls = await classifyIpr(ipr, { log: run.log });
+    const brand = await resolveIprBrand(ipr, { sourceFile: file });
+    const nodeOk = cls.path === EXPECTED_NODES[file];
+    const bOk = ipr.identity?.brand?.value === EXPECTED_BRANDS[file];
+    if (nodeOk) classOk++;
+    if (bOk) brandOk++;
+    console.log(
+      `${nodeOk ? "✅" : "❌"} ${file} → ${cls.path} (conf ${cls.confidence}) · brand ${bOk ? "✅" : "❌"} ${ipr.identity?.brand?.value}${ipr.identity?.subBrand ? ` (⊂ ${brand.parent})` : ""}`
+    );
+    const rows = expandVariants(ipr);
+    t6.expanded[file] = {
+      rows: rows.length,
+      derived: rows.filter((r) => r.variantLabel === "derived_unverified").length,
+    };
+  }
+}
+const jaq = t6.expanded["Toilet_Roll_Holder_Data_sheet.pdf"];
+const art = t6.expanded["Towel_Rail_Holder_Data_Sheet.pdf"];
+t6.pass = jaq?.rows === 10 && jaq?.derived === 9 && art?.rows === 10 && art?.derived === 9;
+console.log(
+  `${t6.pass ? "✅" : "❌"} T6: Jaquar ${jaq?.rows ?? 0} rows (${jaq?.derived ?? 0} derived_unverified) · Artize ${art?.rows ?? 0} rows (${art?.derived ?? 0} derived_unverified) — threshold base + 9 each`
+);
+
+// post-Stage5 T2 rescore: the Artize lineage miss should now be resolved
+const t2Post = groundTruth.map((gt) => scoreCatalog(gt, extractedByFile[gt.file] ?? []));
+const t2PostScored = t2Post.filter((r) => r.accuracy != null);
+const t2PostOverall = t2PostScored.length
+  ? t2PostScored.reduce((s, r) => s + r.correct, 0) / t2PostScored.reduce((s, r) => s + r.scored, 0)
+  : null;
+console.log(
+  `${t2PostOverall >= 0.95 ? "✅" : "⚠"} T2 after Stage 5 brand resolution: ${t2PostOverall == null ? "n/a" : (t2PostOverall * 100).toFixed(1) + "%"} on clean sources`
+);
 
 /* ─────────── Emitter regression — Twyford lossless round-trip ─────────── */
 console.log("\n── Emitter · Twyford golden round-trip ──");
@@ -170,7 +223,16 @@ const scorecard = {
   T3: "pending (Milestone E)",
   T4: "injector ready — full seeded-recall run in Milestone D",
   T5: "pending (Milestone E)",
-  T6: "pending (Milestone C)",
+  T6: {
+    metric: `Jaquar ${jaq?.rows ?? 0}/10 rows · Artize ${art?.rows ?? 0}/10 rows · derived labelled`,
+    threshold: "base + 9 finishes each, 100% derived_unverified labels",
+    pass: t6.pass,
+  },
+  stage4_6: {
+    classification: `${classOk}/3 nodes correct`,
+    brands: `${brandOk}/3 canonical after Stage 5`,
+    t2PostStage5: t2PostOverall,
+  },
   T7: "probe green (Milestone A); full timing in E",
   triageRows,
 };
@@ -180,6 +242,7 @@ console.log(`\n─── Scorecard ───`);
 console.log(`T1: ${scorecard.T1.metric} — ${scorecard.T1.pass ? "PASS" : "FAIL"}`);
 console.log(`T8: ${scorecard.T8.metric} — ${scorecard.T8.pass ? "PASS" : "FAIL"}`);
 console.log(`T2 (interim): ${scorecard.T2_interim.metric} — ${scorecard.T2_interim.pass ? "PASS" : "REVIEW"}`);
+console.log(`T6: ${scorecard.T6.metric} — ${scorecard.T6.pass ? "PASS" : "FAIL"}`);
 console.log(`Emitter round-trip: ${roundTrip.pass ? "LOSSLESS" : "FAIL"}`);
 console.log(`Scorecard → runs/${run.runId}/scorecard.json`);
 

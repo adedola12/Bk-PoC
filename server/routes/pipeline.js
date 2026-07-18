@@ -6,6 +6,11 @@ import { ReviewItem } from "../models/ReviewItem.js";
 import { ingestFile } from "../stages/stage1_ingest.js";
 import { extractIprs } from "../stages/stage2_extract.js";
 import { normalizeIpr } from "../stages/stage3_normalize.js";
+import { classifyIpr } from "../stages/stage4_classify.js";
+import { resolveIprBrand } from "../stages/stage5_brand.js";
+import { expandVariants } from "../stages/stage6_variants.js";
+import { resolveTaxonomyIds } from "../services/ids.js";
+import { TodoItem } from "../models/TodoItem.js";
 import { createRun } from "../services/runs.js";
 
 const router = express.Router();
@@ -30,7 +35,28 @@ router.post("/:uploadId/extract", async (req, res, next) => {
 
     const ingested = await ingestFile(upload.storedPath);
     const rawIprs = await extractIprs(ingested, upload.originalName, { log: run.log });
-    const iprs = rawIprs.map((ipr) => (ipr.templateRow ? ipr : normalizeIpr(ipr)));
+    const normalized = rawIprs.map((ipr) => (ipr.templateRow ? ipr : normalizeIpr(ipr)));
+
+    // Stages 4–6 (skip filled-template rows — already contract-shaped)
+    const iprs = [];
+    for (const ipr of normalized) {
+      if (ipr.templateRow) {
+        iprs.push(ipr);
+        continue;
+      }
+      await classifyIpr(ipr, { log: run.log });
+      await resolveIprBrand(ipr, { sourceFile: upload.originalName });
+      ipr.taxonomyIds = await resolveTaxonomyIds(ipr.taxonomyPath);
+      if (ipr.taxonomyIds.pending && ipr.taxonomyPath) {
+        await TodoItem.create({
+          runId: run.runId,
+          type: "bk_id_pending",
+          detail: `BK category ID needed for "${ipr.taxonomyPath}"`,
+          sourceFile: upload.originalName,
+        });
+      }
+      iprs.push(...expandVariants(ipr));
+    }
 
     const saved = [];
     for (const ipr of iprs) {
@@ -43,6 +69,10 @@ router.post("/:uploadId/extract", async (req, res, next) => {
         compliance: ipr.compliance || {},
         mediaRefs: ipr.mediaRefs || [],
         templateRow: ipr.templateRow || null,
+        taxonomyPath: ipr.taxonomyPath ?? null,
+        taxonomyConfidence: ipr.taxonomyConfidence ?? null,
+        taxonomyIds: ipr.taxonomyIds ?? {},
+        variantLabel: ipr.variantLabel ?? null,
       });
       // §6.1 — every flag becomes a review item, never silently dropped
       for (const f of ipr.flags || []) {

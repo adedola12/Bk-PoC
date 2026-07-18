@@ -55,9 +55,10 @@ export function normalizeIpr(ipr) {
     if (parsed) pq.value = parsed;
   }
 
-  // ranges stay ranges (water pressure "0,05 – 1,0 MPa")
+  // ranges stay ranges (water pressure "0,05 – 1,0 MPa"); parse from raw even
+  // when the extractor left value null (stage2 range reconciliation)
   const wp = ipr.attributes?.waterPressure;
-  if (wp && wp.value != null && typeof wp.value !== "object") {
+  if (wp && typeof wp.value !== "object" && (wp.value != null || wp.raw)) {
     const parsed = parseNumberOrRange(wp.raw ?? String(wp.value));
     if (parsed) wp.value = parsed;
   }

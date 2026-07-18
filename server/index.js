@@ -10,11 +10,13 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import { connectDB } from "./db.js";
+import { ensureBrandsSeeded } from "./stages/stage5_brand.js";
 import uploadRoutes from "./routes/uploads.js";
 import triageRoutes from "./routes/triage.js";
 import pipelineRoutes from "./routes/pipeline.js";
 
 await connectDB();
+await ensureBrandsSeeded().catch((err) => console.error("brand seed failed:", err.message));
 
 const app = express();
 app.disable("x-powered-by");

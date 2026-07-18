@@ -48,6 +48,12 @@ const iprSchema = new mongoose.Schema(
     // classification (Stage 4) and variant lineage (Stage 6) â€” filled later
     taxonomyPath: { type: String, default: null },
     taxonomyConfidence: { type: Number, default: null },
+    // D9 — always provenance-labelled, never guessed
+    taxonomyIds: {
+      adlmId: { type: String, default: null },
+      bkId: { type: String, default: null },
+      provenance: { type: String, enum: ["adlm_registry", "bk_confirmed", null], default: null },
+    },
     variantOf: { type: mongoose.Schema.Types.ObjectId, ref: "IPR", default: null },
     variantLabel: { type: String, default: null }, // e.g. "derived_unverified"
     disposition: { type: String, enum: ["PASS", "REVIEW", "TODO", null], default: null },
