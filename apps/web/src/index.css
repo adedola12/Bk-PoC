@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* BuildersKonnect brand — navy/gold (§9: clean, demo-ready, no bikeshedding) */
+@theme {
+  --color-bk-navy: #122a4e;
+  --color-bk-navy-deep: #0b1c36;
+  --color-bk-gold: #c9a227;
+  --color-bk-gold-soft: #e8d38a;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+    font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
