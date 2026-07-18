@@ -13,21 +13,23 @@ Decisions Addendum (D8–D11), ratified acceptance tests (T1–T8), and
 ## Setup
 
 ```bash
-npm install                 # workspaces: apps/api, apps/web, packages/*
-cp .env.example .env        # fill ANTHROPIC_API_KEY, MONGODB_URI, Cloudinary
-npm run seed                # D1 taxonomy + D9 ID register into MongoDB
+cd server && npm install    # Express 5 pipeline
+cd ../client && npm install # React showcase
+cp .env.example .env        # at repo root — fill ANTHROPIC_API_KEY, MONGODB_URI, Cloudinary
+cd server && npm run seed   # D1 taxonomy + D9 ID register into MongoDB
 ```
 
 ## Run
 
 ```bash
-npm run dev                 # API on :5000
-npm run dev:web             # React showcase on :5173 (proxies /api)
+cd server && npm run dev    # API on :5000
+cd client && npm run dev    # showcase on :5173 (proxies /api)
 ```
 
 ## Evaluate
 
 ```bash
+cd server
 npm test                    # Vitest — structural/rule-tier fixture tests
 npm run eval                # T1–T8 scorecard → runs/<timestamp>/scorecard.json
 npm run probe               # Milestone A vision cost/latency probe (HD_BOOKET sample)
@@ -35,14 +37,19 @@ npm run probe               # Milestone A vision cost/latency probe (HD_BOOKET s
 
 `fixtures/` is read-only — all pipeline artifacts are written to `runs/<timestamp>/`.
 
-## Repo layout
+## Repo layout (D13 — ADLM house structure)
 
-- `apps/api` — Express 5 pipeline: `src/stages/` (Stage 0–10), `src/models/`,
-  `src/services/`, `src/routes/`, `src/eval/` (T1–T8 scorers)
-- `apps/web` — React (Vite) showcase: Upload, TriageVerify (D11), ReviewQueue…
-- `packages/taxonomy` — D1 tree + D9 `cat_` ID register + seed
-- `packages/emitter` — template-driven xlsx emitter (D6)
+- `server/` — Express 5 pipeline: `index.js`, `db.js`, `stages/` (Stage 0–10),
+  `models/` (PascalCase named exports), `services/`, `routes/`, `eval/` (T1–T8 scorers),
+  `taxonomy/` (D1 tree + D9 `cat_` ID register + seed), `emitter/` (D6)
+- `client/` — React 19 + Vite + Tailwind v4 + framer-motion showcase:
+  Upload, TriageVerify (D11); ReviewQueue/Todo/Products/PriceCompare/RunReport to follow
 - `ground-truth/` — human-verified annotations (schema in Milestone B)
+
+## Deploy
+
+- **client → Vercel** (`client/` as project root, `VITE_API_BASE` = Render URL)
+- **server → Render** (`server/` as root dir; env vars in dashboard; see `render.yaml`)
 
 ## Milestone status
 

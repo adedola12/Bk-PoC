@@ -1,0 +1,114 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { toast } from "react-toastify";
+import { FiUploadCloud, FiFile, FiX } from "react-icons/fi";
+import { uploadFiles, errMsg } from "../api.js";
+
+const fmtSize = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${(b / 1024).toFixed(0)} KB`);
+
+export default function Upload() {
+  const [files, setFiles] = React.useState([]);
+  const [busy, setBusy] = React.useState(false);
+  const [dragOver, setDragOver] = React.useState(false);
+  const navigate = useNavigate();
+
+  const addFiles = (list) => {
+    const incoming = [...list];
+    setFiles((prev) => {
+      const names = new Set(prev.map((f) => f.name));
+      return [...prev, ...incoming.filter((f) => !names.has(f.name))];
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!files.length) return toast.warn("Choose at least one file");
+    setBusy(true);
+    try {
+      const { items, runId } = await uploadFiles(files);
+      toast.success(`${items.length} file(s) triaged — run ${runId.slice(0, 19)}`);
+      navigate("/triage");
+    } catch (err) {
+      toast.error(errMsg(err, "Upload failed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl">
+      <h2 className="text-2xl font-bold text-bk-navy">Vendor upload</h2>
+      <p className="mt-1 mb-6 text-sm text-slate-600">
+        PDF, Excel, Word or images. Every file is classified before any extraction (D7) — nothing
+        is filed silently (D11).
+      </p>
+
+      <form onSubmit={handleSubmit} className="rounded-lg border border-slate-200 bg-white p-6">
+        <label
+          htmlFor="files"
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            addFiles(e.dataTransfer.files);
+          }}
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed px-6 py-12 text-center transition-colors duration-200 ${
+            dragOver ? "border-bk-gold bg-bk-gold/5" : "border-slate-300 hover:border-bk-gold"
+          }`}
+        >
+          <FiUploadCloud className="mb-3 h-8 w-8 text-bk-navy" aria-hidden />
+          <span className="text-sm font-semibold text-bk-navy">
+            Drag files here, or click to browse
+          </span>
+          <span className="mt-1 text-xs text-slate-500">pdf · xlsx · docx · jpg · png — up to 20 files</span>
+          <input
+            id="files"
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => addFiles(e.target.files)}
+          />
+        </label>
+
+        {files.length > 0 && (
+          <ul className="mt-4 space-y-2">
+            {files.map((f, i) => (
+              <motion.li
+                key={f.name}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.2, delay: i * 0.04 }}
+                className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+              >
+                <FiFile className="h-4 w-4 shrink-0 text-bk-navy" aria-hidden />
+                <span className="min-w-0 flex-1 truncate text-slate-700">{f.name}</span>
+                <span className="shrink-0 text-xs text-slate-500">{fmtSize(f.size)}</span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${f.name}`}
+                  onClick={() => setFiles((prev) => prev.filter((x) => x.name !== f.name))}
+                  className="rounded p-1 text-slate-400 transition-colors duration-150 hover:bg-slate-200 hover:text-slate-700"
+                >
+                  <FiX className="h-4 w-4" />
+                </button>
+              </motion.li>
+            ))}
+          </ul>
+        )}
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="mt-6 w-full rounded-md bg-bk-navy px-4 py-2.5 font-semibold text-white transition-colors duration-200 hover:bg-bk-navy-mid disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy ? "Classifying with AI…" : `Upload & triage${files.length ? ` (${files.length})` : ""}`}
+        </button>
+      </form>
+    </div>
+  );
+}

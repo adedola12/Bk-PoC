@@ -1,0 +1,32 @@
+{
+  "name": "bk-ingest-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "seed": "node taxonomy/seed.js",
+    "eval": "node eval/run.js",
+    "probe": "node scripts/probe_vision.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.57.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "mammoth": "^1.9.0",
+    "mongoose": "^8.16.0",
+    "multer": "^2.0.1",
+    "nanoid": "^5.1.0",
+    "pdf-to-img": "^4.4.0",
+    "pdfjs-dist": "^4.2.67"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "vitest": "^3.2.0"
+  },
+  "license": "ISC"
+}

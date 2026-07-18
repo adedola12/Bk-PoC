@@ -1,0 +1,31 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* BK-Ingest design system — flat professional (ui-ux-pro-max), BK navy/gold brand */
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-bk-navy: #122a4e;
+  --color-bk-navy-deep: #0b1c36;
+  --color-bk-navy-mid: #1b3a6b;
+  --color-bk-gold: #c9a227;
+  --color-bk-gold-soft: #e8d38a;
+  --color-surface: #f8fafc;
+}
+
+@layer base {
+  body {
+    @apply bg-surface font-sans text-slate-900 antialiased;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
