@@ -28,8 +28,8 @@ export default function TriageVerify() {
 
   const load = React.useCallback(() => {
     fetchTriage()
-      .then(setItems)
-      .catch((err) => toast.error(errMsg(err, "Could not load triage queue")))
+      .then((data) => setItems(Array.isArray(data) ? data : []))
+      .catch((err) => toast.error(errMsg(err, err.message || "Could not load triage queue")))
       .finally(() => setLoading(false));
   }, []);
 

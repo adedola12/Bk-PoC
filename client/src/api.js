@@ -9,7 +9,13 @@ export const uploadFiles = (files) => {
   return api.post("/uploads", form).then((res) => res.data);
 };
 
-export const fetchTriage = () => api.get("/triage").then((res) => res.data);
+export const fetchTriage = () =>
+  api.get("/triage").then((res) => {
+    // A misconfigured VITE_API_BASE makes the SPA rewrite answer with HTML —
+    // fail loudly instead of letting components crash on a string.
+    if (!Array.isArray(res.data)) throw new Error("API base misconfigured — set VITE_API_BASE");
+    return res.data;
+  });
 
 export const verifyTriage = (id, { confirm, label }) =>
   api.post(`/triage/${id}/verify`, { confirm, label }).then((res) => res.data);
