@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { FiPlay, FiDownload, FiBox, FiTruck, FiTag } from "react-icons/fi";
+import { FiPlay, FiDownload, FiBox, FiTruck, FiTag, FiSearch } from "react-icons/fi";
 import { fetchIprs, fetchTriage, extractUpload, runEmission, emissionDownloadUrl, errMsg } from "../api.js";
 
 const DISPOSITION = {
@@ -17,6 +17,7 @@ export default function Products() {
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState(null);
   const [emission, setEmission] = React.useState(null);
+  const [query, setQuery] = React.useState("");
 
   const load = React.useCallback(() => {
     Promise.all([fetchIprs(), fetchTriage()])
@@ -72,21 +73,56 @@ export default function Products() {
 
   if (loading) return <div className="h-24 animate-pulse rounded-lg bg-slate-200/70" />;
 
+  // search across name, brand, SKU, color, category and latest price
+  const q = query.trim().toLowerCase();
+  const shown = !q
+    ? iprs
+    : iprs.filter((ipr) =>
+        [
+          ipr.identity?.name?.value,
+          ipr.templateRow?.["Unique Product Name"],
+          ipr.identity?.brand?.value,
+          ipr.templateRow?.["Brand"],
+          ipr.identity?.productCode?.value,
+          ipr.templateRow?.["Product SKU"],
+          ipr.attributes?.color?.value,
+          ipr.taxonomyPath,
+          ipr.templateRow?.["Description"],
+          ipr.latestPrice?.price != null ? String(ipr.latestPrice.price) : null,
+        ]
+          .filter(Boolean)
+          .some((s) => String(s).toLowerCase().includes(q))
+      );
+
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-bk-navy">Products</h2>
-          <p className="mt-1 text-sm text-slate-600">{iprs.length} extracted rows in the IPR store.</p>
+      {/* sticky toolbar — search + emit stay reachable during scroll */}
+      <div className="sticky top-0 z-10 -mx-6 border-b border-slate-200 bg-surface/95 px-6 py-3 backdrop-blur">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xl font-bold text-bk-navy">Products</h2>
+            <p className="text-xs text-slate-600">
+              {q ? `${shown.length} of ${iprs.length} rows match "${query}"` : `${iprs.length} extracted rows in the IPR store.`}
+            </p>
+          </div>
+          <label className="relative" aria-label="Search products">
+            <FiSearch className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name, brand, SKU, price…"
+              className="w-60 rounded-md border border-slate-300 bg-white py-2 pl-8 pr-3 text-sm"
+            />
+          </label>
+          <button
+            onClick={emit}
+            disabled={busy === "emit" || !iprs.length}
+            className="flex items-center gap-2 rounded-md bg-bk-gold px-4 py-2 text-sm font-bold text-bk-navy-deep transition-colors duration-200 hover:bg-bk-gold-soft disabled:opacity-50"
+          >
+            <FiDownload className="h-4 w-4" aria-hidden />
+            {busy === "emit" ? "Emitting…" : "Emit BK template"}
+          </button>
         </div>
-        <button
-          onClick={emit}
-          disabled={busy === "emit" || !iprs.length}
-          className="flex items-center gap-2 rounded-md bg-bk-gold px-4 py-2 text-sm font-bold text-bk-navy-deep transition-colors duration-200 hover:bg-bk-gold-soft disabled:opacity-50"
-        >
-          <FiDownload className="h-4 w-4" aria-hidden />
-          {busy === "emit" ? "Emitting…" : "Emit BK template"}
-        </button>
       </div>
 
       {emission?.files?.length > 0 && (
@@ -126,11 +162,16 @@ export default function Products() {
 
       {/* marketplace-style card grid (BK storefront format) */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {iprs.slice(0, 60).map((ipr, idx) => (
+        {shown.slice(0, 60).map((ipr, idx) => (
           <ProductCard key={ipr._id} ipr={ipr} idx={idx} />
         ))}
       </div>
-      {iprs.length > 60 && <p className="mt-3 text-xs text-slate-400">Showing first 60 of {iprs.length}.</p>}
+      {shown.length > 60 && <p className="mt-3 text-xs text-slate-400">Showing first 60 of {shown.length}.</p>}
+      {q && !shown.length && (
+        <p className="mt-6 rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
+          No products match "{query}".
+        </p>
+      )}
     </div>
   );
 }

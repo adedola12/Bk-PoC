@@ -123,13 +123,19 @@ router.post("/url", async (req, res, next) => {
       }
 
       if (!items.length) {
-        // honest dead-end: JS-rendered or no product-bearing links reachable
+        // honest dead-end: JS-rendered or no product-bearing links reachable.
+        // Document-viewer sites (Scribd etc.) get targeted guidance — the
+        // document exists but lives behind a JS viewer, not in the page HTML.
+        const isViewer = /scribd|issuu|slideshare|docdroid|calameo|yumpu/i.test(host);
+        const summary = isViewer
+          ? `${host} is a document-viewer site — the catalogue itself is displayed inside a JavaScript viewer and is not part of the page we can read. Use the viewer's Download button to save the PDF, then upload that file here (or paste a direct .pdf link).`
+          : `No product data reachable from ${host} — the site appears to render its catalog with JavaScript. Ask the vendor for a direct catalogue link (PDF/Excel), a printable product page, or use file upload. Followed ${crawl.followed.length} candidate link(s).`;
         items.push(
           await saveEntry(`${host}.html`, fetched.buffer, fetched.contentType, fetched.finalUrl, {
             label: "other",
             confidence: 0.3,
             method: "rule",
-            summary: `No product data reachable from ${host} — the site appears to render its catalog with JavaScript. Ask the vendor for a direct catalogue link (PDF/Excel), a printable product page, or use file upload. Followed ${crawl.followed.length} candidate link(s).`,
+            summary,
             signals: { signal, followed: crawl.followed },
             needsVerification: true,
             previewPath: null,

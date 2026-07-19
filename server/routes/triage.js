@@ -31,6 +31,32 @@ router.get("/:id/preview", async (req, res, next) => {
   }
 });
 
+/* ─── POST /verify-all — D11 bulk confirm (labels kept as classified) ─── */
+router.post("/verify-all", async (req, res, next) => {
+  try {
+    const items = await UploadLedger.find({ "triage.needsVerification": true });
+    let verified = 0;
+    for (const item of items) {
+      item.triage.verified = true;
+      item.triage.verifiedLabel = item.triage.label;
+      item.triage.verifiedAt = new Date();
+      item.triage.needsVerification = false;
+      await item.save();
+      verified++;
+      if (item.triage.verifiedLabel === "vendor_document") {
+        try {
+          await parseVendorDocument(item);
+        } catch (err) {
+          console.error(`vendor parse failed for ${item.originalName}: ${err.message}`);
+        }
+      }
+    }
+    res.json({ verified });
+  } catch (err) {
+    next(err);
+  }
+});
+
 /* ─── POST /:id/verify — D11 confirm / reclassify ─── */
 router.post("/:id/verify", async (req, res, next) => {
   try {

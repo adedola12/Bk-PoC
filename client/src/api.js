@@ -20,6 +20,8 @@ export const fetchTriage = () =>
 export const verifyTriage = (id, { confirm, label }) =>
   api.post(`/triage/${id}/verify`, { confirm, label }).then((res) => res.data);
 
+export const verifyAllTriage = () => api.post("/triage/verify-all").then((res) => res.data);
+
 export const previewUrl = (id) => `${API_BASE}/api/triage/${id}/preview`;
 
 export const uploadFromUrl = (url) => api.post("/uploads/url", { url }).then((res) => res.data);

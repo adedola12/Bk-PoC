@@ -1,8 +1,8 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { FiAlertTriangle, FiCheck, FiRefreshCw } from "react-icons/fi";
-import { fetchTriage, verifyTriage, previewUrl, errMsg } from "../api.js";
+import { FiAlertTriangle, FiCheck, FiRefreshCw, FiSearch, FiCheckCircle } from "react-icons/fi";
+import { fetchTriage, verifyTriage, verifyAllTriage, previewUrl, errMsg } from "../api.js";
 
 const LABELS = ["bk_template", "catalogue", "product_datasheet", "product_image", "vendor_document", "other"];
 
@@ -25,6 +25,8 @@ const Badge = ({ label }) => (
 export default function TriageVerify() {
   const [items, setItems] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [query, setQuery] = React.useState("");
+  const [bulkBusy, setBulkBusy] = React.useState(false);
 
   const load = React.useCallback(() => {
     fetchTriage()
@@ -47,8 +49,30 @@ export default function TriageVerify() {
     }
   };
 
-  const pending = items.filter((i) => i.triage?.needsVerification);
-  const rest = items.filter((i) => !i.triage?.needsVerification);
+  const confirmAll = async () => {
+    setBulkBusy(true);
+    try {
+      const { verified } = await verifyAllTriage();
+      toast.success(`${verified} classification(s) confirmed`);
+      load();
+    } catch (err) {
+      toast.error(errMsg(err, "Bulk confirm failed"));
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  // search across filename, route label and AI summary
+  const q = query.trim().toLowerCase();
+  const matches = (i) =>
+    !q ||
+    [i.originalName, i.triage?.label, i.triage?.verifiedLabel, i.triage?.summary]
+      .filter(Boolean)
+      .some((s) => String(s).toLowerCase().includes(q));
+
+  const pending = items.filter((i) => i.triage?.needsVerification).filter(matches);
+  const rest = items.filter((i) => !i.triage?.needsVerification).filter(matches);
+  const pendingTotal = items.filter((i) => i.triage?.needsVerification).length;
 
   if (loading) {
     return (
@@ -62,24 +86,47 @@ export default function TriageVerify() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-bk-navy">Triage verification</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            {pending.length
-              ? `${pending.length} file(s) require human confirmation before filing (D11).`
-              : "No files awaiting verification."}
-          </p>
+      {/* sticky toolbar — actions stay reachable however far the queue scrolls */}
+      <div className="sticky top-0 z-10 -mx-6 border-b border-slate-200 bg-surface/95 px-6 py-3 backdrop-blur">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xl font-bold text-bk-navy">Triage verification</h2>
+            <p className="text-xs text-slate-600">
+              {pendingTotal
+                ? `${pendingTotal} file(s) require human confirmation before filing (D11).`
+                : "No files awaiting verification."}
+            </p>
+          </div>
+          <label className="relative" aria-label="Search uploads">
+            <FiSearch className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search file, route, summary…"
+              className="w-56 rounded-md border border-slate-300 bg-white py-2 pl-8 pr-3 text-sm"
+            />
+          </label>
+          {pendingTotal > 1 && (
+            <button
+              onClick={confirmAll}
+              disabled={bulkBusy}
+              className="flex items-center gap-2 rounded-md bg-bk-navy px-3 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-bk-navy-mid disabled:opacity-50"
+            >
+              <FiCheckCircle className="h-4 w-4" aria-hidden />
+              {bulkBusy ? "Confirming…" : `Confirm all (${pendingTotal})`}
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setLoading(true);
+              load();
+            }}
+            aria-label="Refresh"
+            className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold"
+          >
+            <FiRefreshCw className="h-4 w-4" aria-hidden /> Refresh
+          </button>
         </div>
-        <button
-          onClick={() => {
-            setLoading(true);
-            load();
-          }}
-          className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold"
-        >
-          <FiRefreshCw className="h-4 w-4" aria-hidden /> Refresh
-        </button>
       </div>
 
       <AnimatePresence>
