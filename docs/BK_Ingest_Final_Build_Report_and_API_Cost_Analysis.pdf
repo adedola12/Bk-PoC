@@ -1,0 +1,795 @@
+%PDF-1.3
+%‚„œ”
+1 0 obj
+<<
+/PageMode /UseNone
+/Pages 2 0 R
+/Type /Catalog
+>>
+endobj
+2 0 obj
+<<
+/Count 6
+/Kids [ 3 0 R 10 0 R 12 0 R 14 0 R 16 0 R 18 0 R ]
+/Type /Pages
+>>
+endobj
+3 0 obj
+<<
+/Contents 21 0 R
+/MediaBox [ 0 0 595.2756 841.8898 ]
+/Parent 2 0 R
+/Resources <<
+/Font 5 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>>
+/Rotate 0
+/Trans <<
+>>
+/Type /Page
+>>
+endobj
+4 0 obj
+<<
+/Length 7686
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+q
+.784314 .643137 .294118 RG
+2 w
+n 56.69291 807.874 m 538.5827 807.874 l S
+BT /F2 8 Tf 9.6 TL ET
+.058824 .164706 .290196 rg
+BT 1 0 0 1 56.69291 814.9606 Tm (BK-INGEST  \267  FINAL BUILD REPORT) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+.290196 .333333 .407843 rg
+BT 1 0 0 1 491.4547 814.9606 Tm (ADLM Studio) Tj T* ET
+BT /F1 7.5 Tf 9 TL ET
+BT 1 0 0 1 56.69291 34.01575 Tm (BK-Ingest Final Build Report & API Cost Analysis  \267  v1.0  \267  18 July 2026) Tj T* ET
+BT 1 0 0 1 514.8152 34.01575 Tm (Page 1) Tj T* ET
+.788235 .823529 .870588 RG
+.6 w
+n 56.69291 42.51969 m 538.5827 42.51969 l S
+Q
+q
+1 0 0 1 62.69291 750.5276 cm
+q
+BT 1 0 0 1 0 4 Tm 23 TL /F2 19 Tf .058824 .164706 .290196 rg (Final Build Report & API Cost Analysis) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 734.5276 cm
+q
+.290196 .333333 .407843 rg
+BT 1 0 0 1 0 3.5 Tm /F1 10.5 Tf 14 TL (BK-Ingest \227 AI-Powered Catalog Onboarding, Proof of Concept) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 731.5276 cm
+Q
+q
+1 0 0 1 56.69291 583.5276 cm
+q
+0 0 0 rg
+BT /F1 10 Tf 12 TL ET
+q
+1 0 0 1 5 132.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Prepared by) Tj T* ET
+Q
+Q
+q
+1 0 0 1 84.37008 120.8 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F1 8.8 Tf 11.6 TL (ADLM Studio \227 Adedolapo Quasim \(engineer of) Tj T* (record\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 299.8031 132.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Date) Tj T* ET
+Q
+Q
+q
+1 0 0 1 367.8346 132.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F1 8.8 Tf 11.6 TL (18 July 2026) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 101.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Client) Tj T* ET
+Q
+Q
+q
+1 0 0 1 84.37008 101.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F1 8.8 Tf 11.6 TL (BuildersKonnect \(BK\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 299.8031 101.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Build window) Tj T* ET
+Q
+Q
+q
+1 0 0 1 367.8346 89.6 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F1 8.8 Tf 11.6 TL (17\22618 Jul 2026 \267 all 5) Tj T* (milestones complete) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 70 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Repository) Tj T* ET
+Q
+Q
+q
+1 0 0 1 84.37008 70 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F1 8.8 Tf 11.6 TL (github.com/adedola12/Bk-PoC) Tj T* ET
+Q
+Q
+q
+1 0 0 1 299.8031 70 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Live) Tj T* ET
+Q
+Q
+q
+1 0 0 1 367.8346 58.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F1 8.8 Tf 11.6 TL (bk-po-c.vercel.app \(client\) \267) Tj T* (bk-poc-1.onrender.com \(API\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 38.8 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Governing docs) Tj T* ET
+Q
+Q
+q
+1 0 0 1 84.37008 4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 37.6 Tm /F1 8.8 Tf 11.6 TL (Knowledge Base v1.1 \267 Design Document v1.0 \267) Tj T* (Addendum D8\226D11 \267 Acceptance Tests v1.0) Tj T* (\(ratified\) \267 BUILD_PROMPT.md \267 DECISIONS.md) Tj T* (\(D12\226D19\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 299.8031 27.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F2 8.8 Tf 11.6 TL (Evaluation) Tj T* (day) Tj T* ET
+Q
+Q
+q
+1 0 0 1 367.8346 27.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F1 8.8 Tf 11.6 TL (31 July 2026 \(13 days) Tj T* (ahead of plan\)) Tj T* ET
+Q
+Q
+q
+1 J
+1 j
+.788235 .823529 .870588 RG
+.5 w
+n 0 148 m 481.8898 148 l S
+n 0 0 m 481.8898 0 l S
+n 0 0 m 0 148 l S
+n 481.8898 0 m 481.8898 148 l S
+n 0 116.8 m 481.8898 116.8 l S
+n 0 85.6 m 481.8898 85.6 l S
+n 0 54.4 m 481.8898 54.4 l S
+n 79.37008 0 m 79.37008 148 l S
+n 294.8031 0 m 294.8031 148 l S
+n 362.8346 0 m 362.8346 148 l S
+Q
+Q
+Q
+q
+1 0 0 1 62.69291 553.5276 cm
+q
+.058824 .164706 .290196 rg
+BT 1 0 0 1 0 3.5 Tm /F2 13.5 Tf 17 TL (1. Executive Summary) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 397.9276 cm
+q
+BT 1 0 0 1 0 139.8 Tm 13.6 TL /F1 9.8 Tf 0 0 0 rg (BK-Ingest is complete and live. The system accepts arbitrary vendor uploads \227 PDF catalogs, datasheets,) Tj T* (Excel, Word, product images, or a manufacturer weblink \227 and converts them into BK) Tj (\222) Tj (s exact bulk-upload) Tj T* (Excel template, with AI performing the reading and a per-field confidence system deciding what passes) Tj T* (automatically and what a human must see. Its two governing promises are demonstrated and under) Tj T* (automated test: ) Tj /F2 9.8 Tf (nothing wrong enters the catalog silently, and nothing is dismissed silently) Tj /F1 9.8 Tf (. Against) Tj T* (the ratified acceptance tests, the PoC passes seven of eight outright; the eighth \(field accuracy, T2\) stands) Tj T* (at 94.7% interim \227 100% after brand resolution \227 and awaits only ~30 minutes of human ground-truth) Tj T* -0.012143 Tw (verification to become final. Every metric in this report is regenerable from the repository \() Tj /F3 9.8 Tf (npm test \267 npm) Tj T* 0 Tw (run eval \267 npm run probe) Tj /F1 9.8 Tf (\). Section 8 provides the Anthropic API cost analysis requested: measured) Tj T* (unit economics, projections from pilot to full production, and the funding recommendation to run the system) Tj T* (at maximum power.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 367.9276 cm
+q
+.058824 .164706 .290196 rg
+BT 1 0 0 1 0 3.5 Tm /F2 13.5 Tf 17 TL (2. Delivery vs. Commitment) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 253.1276 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 99 Tm /F1 9.8 Tf 13.6 TL (The client brief asked for a designed solution and, where necessary, a proof of concept demonstrating) Tj T* (AI-driven extraction, classification, mapping and transformation into the bulk-upload template with minimal) Tj T* (human intervention \227 evaluated on thought process, engineering approach, scalability, accuracy and) Tj T* -0.052818 Tw (real-world handling. ADLM committed a working demonstration on the five representative catalogs within two) Tj T* 0 Tw (weeks of receiving materials. Materials arrived 17 July; the complete system \227 pipeline, 7-page showcase) Tj T* (UI, evaluation harness, and live deployment \227 was finished 18 July, thirteen days ahead of the committed) Tj T* (window. All work remained inside PoC boundaries: standalone build, no BK codebase integration \(per brief\),) Tj T* (evaluated solely on the provided sample set.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 223.1276 cm
+q
+.058824 .164706 .290196 rg
+BT 1 0 0 1 0 3.5 Tm /F2 13.5 Tf 17 TL (3. What the System Does, End to End) Tj T* ET
+Q
+Q
+q
+1 0 0 1 56.69291 100.3276 cm
+q
+.058824 .164706 .290196 rg
+n 0 116.8 481.8898 -19.6 re f*
+.94902 .956863 .968627 rg
+n 0 54.4 481.8898 -54.4 re f*
+0 0 0 rg
+BT /F1 10 Tf 12 TL ET
+q
+1 0 0 1 5 101.2 cm
+q
+1 1 1 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Stage) Tj T* ET
+Q
+Q
+q
+1 0 0 1 129.7244 101.2 cm
+q
+1 1 1 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Behavior delivered) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 70 cm
+q
+BT 1 0 0 1 0 14.4 Tm 11.6 TL /F2 8.8 Tf 0 0 0 rg (Upload & triage \(D7, D12,) Tj T* (D16\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 129.7244 58.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 26 Tm /F1 8.8 Tf 11.6 TL (Files dragged in or a weblink pasted \(bounded crawl\). Every source classified before) Tj T* (extraction: bk_template / catalogue / product_datasheet / product_image /) Tj T* (vendor_document / other.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 38.8 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Triage verification \(D11\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 129.7244 4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 37.6 Tm /F1 8.8 Tf 11.6 TL (Non-product classifications surface a snapshot + AI-summary card; a human confirms or) Tj T* (reclassifies before filing. Confirmed vendor documents parse into structured vendor) Tj T* (profiles \(Satkay Limited is the reference case: RC 196060, 10-yr warranty, MOQ 1, 48-hr) Tj T* (delivery\).) Tj T* ET
+Q
+Q
+q
+1 J
+1 j
+.788235 .823529 .870588 RG
+.5 w
+n 0 116.8 m 481.8898 116.8 l S
+n 0 0 m 0 116.8 l S
+n 481.8898 0 m 481.8898 116.8 l S
+n 0 0 m 481.8898 0 l S
+n 0 97.2 m 481.8898 97.2 l S
+n 0 54.4 m 481.8898 54.4 l S
+n 124.7244 0 m 124.7244 116.8 l S
+Q
+Q
+Q
+ 
+
+endstream
+endobj
+5 0 obj
+<<
+/F1 6 0 R
+/F2 7 0 R
+/F3 8 0 R
+/F4 9 0 R
+>>
+endobj
+6 0 obj
+<<
+/BaseFont /Helvetica
+/Encoding /WinAnsiEncoding
+/Name /F1
+/Subtype /Type1
+/Type /Font
+>>
+endobj
+7 0 obj
+<<
+/BaseFont /Helvetica-Bold
+/Encoding /WinAnsiEncoding
+/Name /F2
+/Subtype /Type1
+/Type /Font
+>>
+endobj
+8 0 obj
+<<
+/BaseFont /Courier
+/Encoding /WinAnsiEncoding
+/Name /F3
+/Subtype /Type1
+/Type /Font
+>>
+endobj
+9 0 obj
+<<
+/BaseFont /Symbol
+/Name /F4
+/Subtype /Type1
+/Type /Font
+>>
+endobj
+10 0 obj
+<<
+/Contents 11 0 R
+/MediaBox [ 0 0 595.2756 841.8898 ]
+/Parent 2 0 R
+/Resources <<
+/Font 5 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>>
+/Rotate 0
+/Trans <<
+>>
+/Type /Page
+>>
+endobj
+11 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ]
+/Length 3106
+>>
+stream
+GatU4?!#cO&q/qEe5M[Wg-UrK>@*mDOBE2CiPWdOpma?]WGO0LCUtgNo<>uXDma-/%U_D*3+1rNG?*8.FfS[Ug%]a7mk?%K+482#LE)XM;fY"DUX:r)NfO*"Z3Gm3F$-c)pui1.Eeg7H"EaD8O\:V-N;UE?+1agp!de;Y"-6@NH\(8`m[tRmkl/YjE%,0&6`])]Y\ZN0>\rm$]n,#&m;6Lg-T0of:?1Kj#(.B`n_>Ohj7CUQX"V4phN*K4DLXqDn`n<N24]6/]"XiLbF>\ZU\?VA6)3>i;KKc`m5Oa?T(sSRZh_DOf_:,\jn[b@g]#mFocJ9_<`,AO[kk79A#Za)dU@HnANTn,D\&&VUb:nAS;DpEX#Pt":):AikoH>N>g\<HZY,Y1l<(78r9.8Vl>OK/WCiK;g2;DpUXh@$%ijK_[XBB4P2)$3!'P:J5$@g<*TD.U3&0WQg_T1HC\\7oE"hqgN,cT9M4PgFG--<Wk_"9,Z.DR/@3*@hJ@r\&Jm]Elf4"H=V!2eff$GAi/m1QV+7t-@&0Gk![EoE!jRkk7($r?4kIOk5pKm'p5($QfloCBDf0ZCm_isD?53Lif$dF;WY-UjLCEf8/[S:eSD/-PYOQZMFDQpotpthl4c@tkB.40TtP<t:.kKraI$2/1SkB75Q`uP4pchkINSBJHfN,qFM9]ARAAFulbS-;;9Ai@uM2H,OgbB>M18gV>0c8.3[:-O!MSf,.h^R9J`!F=O:dC9[C?MSj4N*Wp]No0:;,fd<9HLLQChjnDW^LiY3Z;R]%7^4?fh5EH9_@dIojsm)l.Os_W;j%FGP,>L;`.UIV=DE-r8L6GtAT?BH,o3:L'kajJHOQHH.[2(-'F87ECOA7('7!L6YU<&g&@V-+%Y]0dN?e%Fbm/GR,dN5(=jHW[U-%5BhPl`8-,o10'hW5?*b@`YD^*=`V.m*b=)/&t]cf1E=3Otuf"[oW3't)oW"A(gD30'let5;plIqO5d;u"m$Tc"`N)lIfn0+Sq9OuR/+Ma&*6Vk1('PG"=@AuhUE)&>.+,Ro6%p]EY-?I+*/Pern8u.XRX&]J0N=gVC"0(lsA,YfNn)O-fTFXY.=H@sSW.Q*HR+=hK,4phZOs6XBP!1.cMBk@))VA4MRS/Hmf.DjqZ8itujS8nW.ao*WV'rR=&kO:2g;S#;AIk4FEB0pnj]ZlQ#X;=4ZRVM::@"i.jA(ebq`otPj=1m9r)8uiDK:qeqda3_mD$K==0qEX%g@2((*)Z:P`14ClZbTVbk@3dkIZo+6Q<m6V?HW#oH9'TKPpd#,f9l`WtJPQQgoe3+kW6Gk2Z_?,0R;PjJWpjV<Weld#A0M[D5^6+IYi<dJ#Ur9^FT).PE^/)q_V8VMU\6$UJ(@3+8L4:V6+<L]6]]g*P2if\(M,'5V+BXek="3Os)kr:p0Ilim]0mV&c!Cm7X=<=p3mBM_n9@!ir2jgUOu@6oc=9SNWeON8e=mUTN"r4+q3'.m.[82u(U@WZuU_c]m*Pos#,_6#TAV\I*RXQT2T`-dt?-QZd.!3>n1$>?*,T[G4p+lS.Bju&KKn\K]B`-:b1>h,RFo;()LKYP?Z^$;fe^*2mWJb:K3mSEs^1RF*PXceVuO`G=`h1R[ir(5*^Tao!.P<aFEQ2kU3j?nrgcW#`phE_A$hd.Zt]Al@$2Jkc>bTZsHSn4Xt'RS-i/a2o_=dR@&$2J)UKuOEEIn#>V3Wpp00(`DkP-e>o[A^NX\t2AG>9IRgi9:kME[%4WYio<bOQDCZ-B,,T;3cE.R37-"_WY)98*G*HS"%cWQ%j`L$0N:3:qd;P,C=OUZ@7Q]p<jgk)!p\Yeg,a*dtNHEU[s2F6;cm0(UY[7Vh3S4"EJU7.UU\r*r;;8csi02I+Jk[Zp`nT;tRR"<3=-OhNBVDUoOe)X$ht<5Q^g@FJu*!Feb+-&kS-r4SlD,+S^*EQZIu#C^u$K'mjR)*8IfI!8On#8To6m#[@f4$@I?-\pOAR_"0.m)f&_NmZks[NFbrYr%j.u:R[;db&%>$B@Gik7.MH0-;<tZR`el/\MqR?2X]4s_r4&0#k576$LK:=0ZXQ?rn3[.TSH=*;0eB>,hVbT)oZu$8WES\1ZlBgbAE8T7E3Sa-Il/=D%@7%"nl]1*9Rd%h^,N,FmSrodBgHd(gnK?hRH.1Io=(G6\8qT+HHD6Z(1BKTVR=tPfn^`Zi61b+tZWX9Y7p^"dPutkq#W',/dP&&g]KH\<'7G9KJs9da%ZAY#^8f^nSpSh;#:#hQKjn=DNTU.*%H+(Rg[Z6:H4\AgM$jNIM6Nc%VCG9pDC'b`s@6%ItHtRf'u\KXH3jZ%a$EXa.24e&l4T/c!X(Jhe,l"'IN3rsN?DS5g;OOX)GB2TW0*PE,YS7D[SF1A=Uk7l+[lleC]B9S3iBQ+Hr6P.?K(,7/a+]c44QEHd^JBa+l#*hJgL2W=djbRNa*DP.,cma/+OM2K&A%pNq_,]cnN;)bRuRAZqsV^>Gl*TZN';j!OUkeMhpR,_Uae]_3>(MN>s,T!OFD9P3iH%kN5e?VI!m]OA^PXe*;Z3_(qX@B7N&A%i[g^1KVT^aOQ*?2<@SDE)O8\=BGjnGh!s3M(3^0Z15P;\"pZkD48Xhd-_[gT9a1KJ6<@$+\oNV_bS)a&4Hg&Ck2]JL6.\)/?-ifMRd<OEecZ@uLL*u>*-YLbRc1(hfrgpF<6BG5[tqaU4GK[%K/e'_,5H+8G9W%+l+DQQ8qrn">c+:>)]WW?![i`[?[%3'*,g^"=SZYeU.%Ci)[XB$K'jDNe^k@j7p-oZjW"Eb/_W=tR3f,=><5nEM_.9-kD9W&:Fh&t,g/73^cA.jgl$k'Qo1_!A`Cq"2fFR`Rjg9VK2-g37M&e4*?BNc\gbosAtn@>[3s88uJZ/(lB.#YUiZJN:5UJL[\Z1DP8DdI%Z?88AD(TI'-^V;\U5/5-4gBUg?G!0GLl`p*ec&rleC^9@0-T:\'\#8S*Y.V9eEP9oWf(uB=_"N&tMt,%dbeRu)fB:oa`cOAj:7J`QS'ttW2=1TPY4KEqPl&YDotY=r)1(%TeH>3GGt5S/D$J^.44n_W*`u/6^[1?k[r.sODhY8%m&g)\U]1AcnMO\~>
+endstream
+endobj
+12 0 obj
+<<
+/Contents 13 0 R
+/MediaBox [ 0 0 595.2756 841.8898 ]
+/Parent 2 0 R
+/Resources <<
+/Font 5 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>>
+/Rotate 0
+/Trans <<
+>>
+/Type /Page
+>>
+endobj
+13 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ]
+/Length 3951
+>>
+stream
+GauHNgN)%<&q0LUoYW^Ya!??8`Cb!4ABBjZM_$T3fPi>u"GS0Q&7BI>bWP7$n!P'K.#S]^<FV:h!]-53krsO,Va5rWr&*R8iL8tT8dB8C1/+,haKROkVB>#DqWs8URciFk@?]j5_t$>S"5>MW\p4+rUml!G3NhKKAmg_(H^aEVZmNia29.Yhp/XMHc_Li1Hm'Z[gff6*42,WBH,I$Qh%e-!7c71Y'Fu%gR[jlN(:]_j?.8$4rT*=ogXF=pdEH\qU,Q_WN]th[Y@eqPki274Q]()9RXV*tO$ZaX`S9s!H($&ZOCmff_me^]JYCbWmHr%\3r/9-0$>`%Zg["#RNj-/EphY?AS\m9GYYl=FNKH(hS^j9kdZM6LbAHLb=h\_Nm>u7Fb\9g$uV!5B_HgjBR97jDL#;0>;C?Mh:8Hh%K1^m0m@3$ZR%!"pB7#SS!HF1ptlMLkm9Q\Vo*O:?FNYRJH:D;gY7(ln"0WT7_ENf:O.3A0g-?2',VYk!hCl:l767Q=N\@4-O`,C2*)(3^+!2'o#XjunM8=/*jRo&fdLKE]SLi$;e'F.maRlBkjA*8NfMr@@&%+cNi>k"E*sR<2`0D&I$tlR@QC@*O3b2K%WmoA^i=c=#Rg,&,Lm;k!2?TBclMhIi<>\'Hd!'V4645ng<nA)Yfr3ljMX-Pe"u#fY9\tgdP5?,+g#=tdWK+qbei8lr\ZRJnZT.<5W&rbW?^BM]e0\C457'"-`hgF+J`9(]NA`:Zr`\.#[A4t;l&rX9(q_o$3D*9:QTNuZEbtRK:GVB#@ccRI0U7'L-[1i=KQjP;OPR5O,%!s>b:JV4@;=5W!]ui,X>V)nGO;ASb$B;%st3%68K#\]R]Vt(_a_q.`2)k7QiuI]Y)QtY)W`.kq<]AKd3.m0W]:1D?m\p(Ar363)q6ZBto9Zp3.u/6)b!.Qb<La3J@cPWQJ`D]YCt4mlYNs2-M/%![\"Gnq:k?Y_`%Dij@cl]KQJel-G2<E.t"d0emZ]T!PdMOqEKr9<'bmdK/!`Jeb_!h$QgeZY]t[^-bK&M*8R;q_UIL3;X!)RU3&:L8Rn=/nn=f=f]b[R:fM<:!1*u=7+7JCi0i?9W3qEqEM"iN6s[]n&qKSb)_:Y7K;=l2CYs^>S6Q$!/_XHn*,r,i9Lf[@7g#Dapd0R4N\qNAu"V8G*/Jc_53$PUEjC+eN<Ip`U``6p!HWC`d`#KruP7LW9[UUmq4ISL(:N2*U'`lOtCphQ*@-mXhR@0_B)j:kBWB^cOq7/>Ytto/kbC2b.8LQM@@sPXL_W]HC?reF<GCR1s3UbL=i7&iWq`pl&5Cu]-%A[/QZKm#`CSLLP7S6>'&m[r+_m`cmMsWYpPr&MlO!4FroF1G8"924k&tAE4LN[3KHuN.<Eo]@ETrLj\qd)hGVJ1Pn7+C6MX\(Q5H+#a[MOHCfm28Wqh$!!.LItrW2fY%oE:Sm,ZN=*f"33Rk0DO,h0WA+(u0_!8@e1k0^[LG<nMRH!CiYLn:?WOVA96iH31?&5`^7Z]`mB`"Pbq(.iF&!kPNpEl)7OLuY5Rnh'f;nU/OB#sT\6AOSj<>6D'VJ"b]WU3"lBNskF(.EeP@%+R&qB.,05p\l*(5u9s39_pXeAK-c1#GC$)U?c>GB*Ec&eE!Cq9`J-H23&k[&_B/A]h29f0uWD75F..Bp[NB`8(/4<VWDPk%6:(B%?U$8p:Zm0d-\qe6Rr;c4Njnk-Si7mb9-HQi*Cg#E)Y3leQrEN6'rlU1jNV*,)O4d`K9Ybe)2>;l(`#%T0?h^lA,qbENtO^K'b5b=r0C]W^PhUI$)oIg/M(E-uLZprdOcOMmDj,DIO%eC'1"*'RDbbNc<euiM9305eq]fWMo@k$\=%Q`Tb>)J;@q*c%+)oCmY+F:j@bF?gmAn3jP+*FRRddInST/mE8HYcl:DWDX0A_H^".UAd1>[`+;"UH\),]H(uB<oNT6(7Ph,LK"YT8UE)6]D;QG$2k"1.([R.(lXnL$G6Q1UAl,o;GIH6u`?Hc[KK\%I^-)lh:d>aOg5Gq=.o<?_3MX:OAph;rZ*q\h>@uX)]lSeeH2Rs9TJln_,-a%>e-cpWp"ZR,kgkZl0WioISenSD+e/:4OG>e\gZF'(,)0tB;*E#Ds0FfLb-Yk$[,`YP8)=OI]a443jn(9\,O!9A\DlH^^;`a091&'`O&]aLaa(Q"Ssm>hX#f)<X<r\REa^X^:'&P.o=F1,*D6PJ^N89#_"9QF1VNdE\3EBQAl(buoInRYmaD@DiJ&qp7T5N1!p9Yo)Gr=,9ufX9ZJtLQ'Kg]lm[un+RnHq!S+]9"N3V/ug]!I?;:_Ja]NH.n>&smK&e^K]:5`"-2^V846)qO_ZF^.,YnYWklsp^kR%.4a+1ID:D.][4fpXXBJUKe[>'$]*5@RhCKOOO5<BB^_L\*rk@GE&"TG8FWBm"^.c`WRBn$?e8CF,&DF2FJ,9Sg[IfA^33%=isLDH8m_;?J$g?D]kLk#!Z?Ah'4)`Y:Ge?@qTs_sRcM?*@\dX-`h/R/QJEB]Nj*&]5?D.U`WBNJ/iInIK^gCatUi_`F2Td!KQ8S&u/G5"o0T$"["R]7a';B;6,iN3$U8?G($t?I'Y>"c#[35j9SCJ[Y?@,1:@<@-8H]1l4YN@5^/q:FWp4*\=W#8$_`^.c@<WSA,qIZ4uEI+j,V>kOMeAUYfs9l1UdLe*5sa3b\J:q@0#!PT5A/a"1M.=i&4XK'*+nh8I*N+e+Jt]Eq>EJ2;'%%2ZMl,MLb=7"@E5AU#^"W.`\U^qOAo[bbJ[B.(A^jV$`71!W2*!*.9j1DBsCWDkZm`UX]mBhG"]@lc(Q?rQ?R67`Uk8HNf<mXi9(h'<kr54E57(-Xgp(q9'r`I[MF$I'1Edon2/5Ko'mk?1[;YiKOM:Yks@>.EKLet#D44,2Lm@t&KRS^MGer!p>\*S:!Q1qM\9;Qp_4ep+>gOs3p^X>.to9WTqF03C6X7G,@MZ75q!TFA]B(G$6=9LITh4S]=VhF*:*`<>:2#nu;"9Kn<b93`18c_fIWR]Y0Z/0bqH5Ho)M(2"@91)kr<bG<5-Pa<&1iZcag9_ER?%!c5-C!(G?e0$7OIOjFiQir1f:"k'>\P!&TraF_W`a;.&/q<[R('KrD]_:&!d?-!rA&7"8;:WR<fU)Yi5YhaH9etB&.^Q]CbcA)t]rpUA_Vsc38A0iq8H6PJ=DTPGA)m,HZn_cu7)"Q>Hs31bUpk@>F#BjQ=;?Ji%>4^L<@fmIe.fS+8FN3TV1jeid80&&N7Z-fCqW]4s&L3HLWC4f`6O8C7GLR&B)iYb:7rJKduJ8U@%EVBi+Pnu`SsYT;%\CO;9kI5eSG=)h=*F6po;Hr;[E_<c?QT/9SPYQ??-k,";M16\`/m9a5gIp*g+6<n/(NB/\<afG@[)Lq+Q=B(Eoo*7#5[O+:KX'W'R[5YnO$eC'a7Q[tc5Xc#>G;?Sg1B[jmn,9h=2K]UrQn0dsCFBVB*T+h/(aS#hDlI".g#LB*Qj684k)HiehLd-KnW5S_eG2#<LPm?))sAN-TmDR0pH,kP9JTYuk@priEH;VeR/<<VP[A?2^fD3["DaI%r"kgIjfdJVVsPVE/7AfjiFs7M#Fd0U=`!B88cXX#TRC*uJicb[7oaRqF:oUL9_K+6?!8lq`FR`ceS^g85!=]`:*NFngnjd7NgkLgTuOK+HIKOjGEp(W=YE/!!_V,gW`<1E4hZ8K.R7;\/@l=DS`ZKC6uMf'3%FP;RCd5GQOn>(.Qj`R/oLFlY-(TOmr(#EARTETJOC^'N)DtTo#1(<Ton;b+>_p^_VknUQY77b+FR1b_o3M08.$V2.q5e/j-aFa7l[26l#-igLUW-Q[NBU_NG?iGk9K(oY-lJr=O2IulZ>tWS':!17K:O7/p+]T/URm)6_^%_`A3(h@/-jb&Zkf9]l'p/>J'Fb"'$41GSLsCCRB2JbmT)Bc'gp>-~>
+endstream
+endobj
+14 0 obj
+<<
+/Contents 15 0 R
+/MediaBox [ 0 0 595.2756 841.8898 ]
+/Parent 2 0 R
+/Resources <<
+/Font 5 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>>
+/Rotate 0
+/Trans <<
+>>
+/Type /Page
+>>
+endobj
+15 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ]
+/Length 1936
+>>
+stream
+GatU3gMYb8&:O:S$rEUYgPFhedQH2X*&r*Ta&^P'!<kopUl?h+Z:ink+8Y@f]=aM'A6H;l=;3bW40s!?c3t`!nSucs[N[c(d-FVc*1&!nEdZ'.aT]AI*.0iPU=f2[T<&S?0-\S6I)h*.lMZ9,G6]DtTbSnli_XG]<ZLqBU;2\h+EjOZ;*ie=`e7!i[ZFU"CV[6.3-MR?'Ddh3lKrF9#tZbVK%%=,?j"+h+kB@g1cdfBT7)+emWq2VFi0%!o^(Vc"W`(Q]6HtMmk-h19b(n.PpX7[9C3=@[,9TD4S)(/DsIN*@,Fa"b7FMae,IbLMa-I;WcKeA[M)epZ..L\Fr8Q7CaY$jr\3GcWJXGrR20mLo-1(_[MH0C?g6eFN(sMO7hFN-Y.?FH3gSV#"tUk]igsE0%6$H8D8ZD+$/A80Qg'*a5L9DoZ0MR(l#/Ms2:=Huck3ete:#pU&AVf^HiHe"rY\;WR1J+S$eng8)hggHLi"Bn%(T(uCq87_*R2MX\2djtgaJ@QWOoOIBhnZYYpit^=db=>M#aV'cPRBJ?SL08E2XJHGeqO[EirGJ.>7M@\qQH3:_@aS<O^b[g!/Ch>HNgj@U3Y:Q/ju,764pI\'cLb#YS#F7M:5;HnXcbPP^RZWD\,hi=%98$d%$n]<RYQ@lZ'uCV)JI`E$\UnVes24B9)ZP9R,M7]Wo=QFpJLFEAs,VMC]h?t$BnQT)iW)KAX&*Ntbc'6T_LS2-Mhofbm1iE-I2n&Oh3M1*EQ[G$8Tkm5/6:b7+#'3!1%^Ld3Xk<XhTYRa`,aja5HG+2)j#-P3cF++#k6-;T`nUd[Yc07b!\lU^]Z^X94VMA4@!Bbe4D+[3MQS]M!PnjA0/gYVu62lU2L1;E.ZU/1]MV)cLe7N3+OO9]0k@#2:o5GrQ4NeED6A:*AbiO(D8O#sQ1l<hF0?%3g(OX1Pj+Thm*]GIa8JN;Pr"X7WU*\+drq,\W2u=d,2TfS9B9l^SoZ<.7.uog\`fB1Ba_:\.JX-"em?3_;@2sma&mS88SXKq$(as\?b&8@j"Ol822lpfD?>NQYDVn^qK;.PIfYng@lgX_4%:%-XX/:TXADjh*nB7R-F<`;p,!bpdmE`QLO';#c)dJ.,I>NXkbn#kJ!@"BuG#7:\]q%<<ZhO1=:YSZMRd5FAs(Q4NZ>VT*):6-i9e2IpZ3HqPA0n65CY";%/Ym!TE@#BS<%cXFV8-:SO'h>fo+sB8.G=KI.]>tibq9.c"Bk[c"Pfme8FU-@m`e/.r?/#G-H*"DkU9qtB#Z+K?<'=t\J-=k3uraZDYbOW8ARY#goO]jBUf(J;NuLq=O]H/FYCm8RD7u8GfeARI8Pu:;VW_jm$saOiJJKueSR+G1D<*h?_-O(a_dF<`nFb("1%.$(#qH:<u?+grr;LT5PtW2+4ogFUq,pSk[((5'e!!>8G(:JNAP9:Q"!Unqs,h0c)NEdLG#%3L80)p]XgVpjQq4((cnFHVcj/U9JW`B_jISjbU:3qBor%Ih$Xhc_e6<Es"m2OYWL0S@J!,-M[oMhWEQ$C.ulN:HqrK[Lgc.@9"cBV6J]pb*43c5p@UBjlGXCBg3Tk%mUjW`+u>VBElDYk>Yei?_\Ye3MAOt`#1OPQY*g8R_clNE*Z4;ch4KaX@`S[$W$c>=Vt[fj1"]3+4$X4G#4^AHG#W2fesN6*RhNpek?u/,%A'&_d$g(6j!5Y9OfV1bAI0':C#+`nVC(aHif,WCA==%UC\SM[13G;T20Gus=gaiS7GI@d2[+i@h@,+:YV3$RY2"XUpPnI(gdT)eK."Z5VI(qQ.,I!rI_c!8SM,>@H.ctFb14CkVf27??"k8s#jdPkp0cieaWh`b^;b4B1_4o;R88TIo:QaEqUKO-2><ZgN2QiP\aP2`?l]NtI3Wji2@m4ErQTuD?5teHBmG3WaZl7**W--ql![$~>
+endstream
+endobj
+16 0 obj
+<<
+/Contents 17 0 R
+/MediaBox [ 0 0 595.2756 841.8898 ]
+/Parent 2 0 R
+/Resources <<
+/Font 5 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>>
+/Rotate 0
+/Trans <<
+>>
+/Type /Page
+>>
+endobj
+17 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ]
+/Length 3911
+>>
+stream
+GauHN>BcQ-&q9SYW!CY/16F75)N_;s@-9G9M.=TWm_8Id4UBaW1!g=<<jWD/gUF2n#h]j-;Ke7f8C1(4;."HgI8r$fa1mB*hi@f`Vf;4C!5jKS*>k)S_=TOrT-!rVUcGS82D!3kr"qMgR1mat>e'cXAA[=S!G6-@`1.\&lAk!f(<"#.Y/X_qBl6@YF/23ki0&bMAlf$jS[kn[b8[nOkVb#r)\X0rH[<K+e6L*\h'P&*S&R-As't]cbK'?9;h/*$FoX^RqJu9IcN!G!o/jI2Is$$"I0J)<0`?\N<Nl0sIO.c/X$<7[3kb"rq:<L2/7pp.o$?0@^4;]c#X\&dNh\<TWKOUPA]C%5)pDa8b9Zgek3sNf]Elf@0FHa,V]s=CDfBmm$/Q"/4i>+4$t]C_O+sO`h[u13MeEEoDVFCp26p)/f3maPlmqOr")C&NTY'?RJO][/'DuqX-NY;?[t_J*C((P2BuAf_,M^&.'@l)ZZ[0d1kF(Sek^;H$]pq?CZ)7.>2_rCLI1:r?4E*/79Kpcj)YtChF_d^Pf0tjUaZXl/>^5/D\;9*9/9o`ln#os&-#4NsX\nI9<bZ?bgEOgcP!b[l5&#.$GiW"P(\.Q7*$L7c6LjbL&++HPEN6FqeaQLC%#;95X?:QuWBGbI<1@8LSb"5K6]2ZlI:>&),S*Wn&Km""oWp6r6]hdSBqBWZ!.Mq?0UHaFM&;9+&8#>bi>\RTK,DA_AB;^l:Cr,o`Det$hIj%uo/VIq>3+Tf!JhqtY;+?`/d`3pA7!QVV$>QH.3[^`J+V)s\U\:uS8L2[j.OW8([V<26I2?*9X%bhF5;Z\UToB:)2Gh2NjOX#d7qt7b][h3'GLC0YGrXS3a-[dF)=0AN7F3dbpL:c)T0M@.Q)2ardBZu8][/<j]3KB'o3YMi6bS8)!45-9ZoIb_C#N;#nW'M"ebpOYmIq2@`f?rZ^f4e&Pa67knIgb%"jgdd$n=!Lnc?#]P>&W!Q4]c\^<Ipltteu!J_VV,Wl<)CLZqoFqF."&ka9fD"n3&gI<&$3]+$T4B(3`XQfS!oF@!kYV$Ls?Mt?/>fKn\_:^2t3Q<J(nK@=eViYO7?4MO9cSNm#j4%QeeYhI_7ZPi6%.6WWPSe7cYFKj`':u2l*S?DjDX'Ddfa@[r?MI>>nn^8+]nL<TTGP\)8Ebi63S(c;V%/G;nYh;^s!URV`tKX*n/-[;O]=riCP_b06nfP@+eCUqW6Agg:Q=ns\(U-cUU38K*Zdoo]8Js>O5Gi^AQhWXf%gf&hHR&0l4'nC05pPOFl2l,L`DJo5DtWKGEn:jOYGo;EsN:8[HIDjDVc\pduhC2Q/D,h\'FW1WV!P]alCp>>i)-41f;u8L@hn.qV'HMUofQcCP(?lJBA4&6gD6(1l-jmf;._QcnMTM<CgeEd2$IjbS"bMUV:Ef0Q"MAMe4d^Wu59Rjc^)fWY;8S'26$';6@ZQfd6W^n:%OQ5]Os64:=(Zjm&5gnP#O+!kmB$lG:<IQhtihQMud8q[(3s*R)HVgp)12&NRXsZgof!GK95EGf4\:0KLufj;@]\IeuaVP=-[k0YtEN;fgldR)q;5'hL.%:%QmIiq[Xfgjb#LV%qfPf.Qa=\/34\.]HRTa?iL60hj2$'^<G'0kMTXl/s4WbtV\)cfcG8WqK,H&*F<dLS+TCk/Is@Ur49!0c'?Qr-FX[X+VNnUq@_HO"?NoJXY^;E=mK]j^lRJbX1/75qC]:OVF%3LBnRUi[ArFU_4E(ZH1204=d-21dg\"iZ>BLO]nO*N@6QST=-SVR84r%4Aqk.e3A[/h3"/0_Q)aV=G,j#b^pE^Jp`DI&1*WUECfkVL^']iP%YkfR#.L*F-/&Djme:3ATWPB\I<4W,RrRu,N3m"bDm,Ms$=>f=tM>X;Wgi<$_4Ef-=]`Y1uj?h72%;`7huS2Bf%gD73^a<-VC4[(BJY)hYrH\=X7O#Hl$.#Ja>GbRMl;5QX3'b74a4&Lg%&''s[V>,77lI4qH(]dl_3hiUUGUA_?jN]\kR$PnTU`Y$'eiEIa,Tg_0t?,9M38<SH)7R]>'-0C@Q4,cN!n1+[kBbl=:bfj;k:W=En?mK97%H[6O6\+"#`G4NIqVU)C/N*ASqI1VE]9Qo3sE9:g<Cq%R0m&%BZB5)<c;>_VsOCsH(_\pF])/l@R^V0O=q;p][n#%;A3/r/qdVA!0]sIJE"f>OZDN3)O%ba9PLeQqUhijQcZ;J`:H=5?/Nus"F4"d5--G=L)N"gNfp43&@o=c`aF'0K@C\ZN.h>jK9l/kYm`=o^iiC3OMhat>EcZ`m`ls8Rh-hXGf96_9l&)F1q1:;jC%!n>VY9pligXK*`+soJjSWjlIFe_ODK-K^>ANQls]hOQ;bsfQ@Bp`ApKY-'<<0s=gAL:Aj'ed1hRG"]IEc(;k3FfgH#-B)jmAhBeVA`JtD2=$h@l2T-kIWm7\c:R&DA)Q]cg>k@`l/X%g!e("9/M7#9$e>D=@_H=JGW*U=n)WW8=hu1fl`DipbO0I>qqlj)?NBPGeR.ta%-gDHM!r+F:R(34i2K>_C!ATE#SW*R_n"OE88M#5K;ifCj0I\0_$B`%MHK^ItXp/fF(:X.d_(/F`jHd.A8VA9.=:d0nZT$@]^f=7(3EONFl:*:C80.7QmgkZcuV&PGJ<1Wb;j@l`,VgDP5cNPn<5=[_cNJfbC#7UUaLOfNMf&RqBQ"2G_]m2DOIHVU_ZFe_1sR2qoa)7X1!WJV;\!*q39Fc3NEsPqN`1WWP,AWFe4jbW\=9bS,J/mVTI<?``tCPPW?JL)G7mY*reUW[9/&Usi;J-nr=YH#(6I;^p`:`/JTmK:,6cL`WA@FPKoHEYGd\q;dEADPqeK3lc2,`<86!^2\9T<DCu^*18O1.g,8`Xr=9Rdn%IAN2r,d3d=-=5,fg]^Gfe&=P0B-kO-mJ;\K]/kd;hVMn.Q$cP%s9qea05MQ_Rr\]d3-b(WCWH*i5p&J]9j8RlF]bGE@Z;s-J#n*TM38;tsH%@^LU8Zu;)PS@.u`DmOQ=7]a"4dr[sd$YTZ4aS-o'm[PTN<=*U1'8T$/@+3HUVU,D^?Tq1QR#BsTLs=U8"o-63c*]Z%K6UR4Z7E)b=i,N5^'FPm/plF-XI[p*]Qrh<SdTqoldOU8E?[fj5gg.EjT/0(!0-o=b,qJ)qIC1U)8Y,nI.\b?dc'kQsTC"nkPt-?Yl\,HGe9VUOH<4\:T-UDlH&#&3703@i3t>*7Vk(R#+6:HYsBWTWQA.!bgjP`9EATY-"#p,a#^$3^f-F.7mQq8+^C!)c!b`:-qBi%!Sf^/5;m9EA6&\hA\HK-7XbQ^OEU5gU8-pL\1X:G\ddk$*6^*H5s0paC=73T54Z("b]N[H>P.,DY,/YXf5M1f@j[qqS`9=FuqYu/[$-e2/_`<[SE\W.8a0JX1i8n(c/).9!PPq@PqXGlS;/3]=$sl1sTFK]'?He1Y+G321;3/RLR^LSrjJMT\UF,e+Hnh8R3!6XOk[p>#I,_>LPp9@h'ZA$<]*15T8h3^$M>C82-+D4*)Yh+g)B%92XcMq*<1[O%R,1$hIrsS3!W<3k?X_Ki(A$?Q$o.W'3/`4t%-Y6E.]AS/Rta"`haqF*/._NGi0<Yf\YJ8uE@!;$ppcpnl@uUC[gmGe$pp['$Ad\/hN?Yin;K6*=rUbGEF.$tVA$.Q/aI-#tmB?.F;c<RiFlY&pC=cZmTpT%:#XM<<g),!F]Y,RNUX),UlKrP#./Uj?3PXF=q`8[@_UP!E'Kb.Vr()ThX\+Uh0]0W+!<T2;)YY<#Y\(K[=Q_Q$'^Bj:QLi+GT==VT#hU=2(;o/uYHrT*45;i:\p=W2SI%srRj_ds.uT7t)LDlO/S<--/oB#JJIgf*Sg/.GS4[-F<a)D,A^6r+4'Q4!G7C&o\gi]k[2iTS%Lk%l:~>
+endstream
+endobj
+18 0 obj
+<<
+/Contents 19 0 R
+/MediaBox [ 0 0 595.2756 841.8898 ]
+/Parent 2 0 R
+/Resources <<
+/Font 5 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>>
+/Rotate 0
+/Trans <<
+>>
+/Type /Page
+>>
+endobj
+19 0 obj
+<<
+/Filter [ /ASCII85Decode /FlateDecode ]
+/Length 2782
+>>
+stream
+GatU4>?BQM&q9"Fe3hNa1C&,GQQ2S>O:7=HQA]D=`TPI-V7,34DVL=nfSBFmqc-:TD'fIAKE+JiWTp[e^A;"k=no;IcQjl!S'np02VAR7(M%m0UZiT+Qlc4h8;*,gg)c(N^YFp(1\#9CU74qK%]td!ncKItS;Bt&'oFF3-n!o3KHE55n0k'd,@eTaLb2:gcl3O^+%6[J[f\:j!oDe>-NWHX0<fd^[l31!,f%',:8>/Aj3+Wu/oIRT1FEHb5$i\$rBb/3?%+f3Ru==sh+Z_SoM:qT`0U6E5.9A''<_.$_R'$QO6h3,>Bmjumb9rhs7.\r2JoJ:^Y0!JD_1R)^3:FG':/$@rc"66.I2^PWZoaPXArCq2mOoU6iWh.X%W:c@e:@e&%/DrB>1j/[J>ccr6f0fjB,0]n'PM^r^XEcm+]73Q]cMn+R"sJqBYj61VrOAj2=4gEdL[X*8q"8a_oadB,pY],gjVZi:O':I.Eg^5k8oT]dO.%3?hp^9c-<cW]&m!b%7l9$WZBYBoA`Ef[[?8`=9pK=]#ejEE4\@:7=)d!)s"f`Ql#t%s[DC_V0>5U6N(,'n5>JA)&n`jVrCgeCVaL86)pJQV!V.Z:O"FQ,Q$r#.t&m(=#R#.<qD9E0D*k,)R]ZNGVF</SXb(OdLA,b98V1K.$`\'Dt2\qLtm$m4&nfqc/r%V`Uk$%*KX7)<bQ!(IJie1L=N3^(*UGU`cBaRU'3ZIUC47;"1/0hm\*V_J/Qdh!QF!G%CWGNP'(ck&<j?N4PR(;;LZqdI?n>r`ZI=2G1>M'f'$C>K(I8aE1p-A4L,`_<gR\+MQ>1q_(-,bDP#2.b%V&;VF+ZPUNSZWG,dc9]"fbDN"@YQ5Y"Dj$pN&C@G3GEO(bL*QD$GQcQLuN--.R28r"!QFE_J.#f<^XdTtVg+4Jm8p+;!c\F46UjqB_:IO]3j3J\mn?"'ik]8VrDYkrLPmuhdZ,PaBTY*P&3`Jd2<#2dG7HK,=j5qtC(tV?L8W:m:=>Ltgn-mj3ROY;W#b.O/+]oj_n>VXrfu*Ekrr=`kCs-;GSL9PD_G+bDIH5O=[Y=i3BcBh!(BiYf>JVKLJ&Uh4DmMN("^E*]EJ%kVNda[-M!#%/V9?Mdd%?I9JoFD`BT.Ra5lTqKh6k`\WDBIY%E2U$dDP*`]&X*aKMYJK2(Juqd&_=lW<AZ`W67l+m+*+NWtl5Aj$ocaRV*5bP+hnt,sB4LDg^GqFQ-Nn;!'ITAN[J6'(J%)r.=B%T@>+"d3G,eQZ)b%pOFP\@6E<_ZM#>DHW,,8*SelII&,WeY^*Gj2BmA_lh)nAGg=$]k3m377W12!`b'ujG0RT0TdC11A,'Oqj8+jb$+Pc`P2X"dr4q4?'JEEqY('!&>tJ='''4hk?[td/-&p'pM*a-li`a(Z%,g;[eYlaO=/K4*S!ok"qN'n5d]a6\d>"C(dg-R'rFF"rn-8I-k2^!>"tf1p6XCq>laEZq'eO&[R'45&=b_@q\:=iQ=(u-.@A=p'SUPcK;tsCm8nP)bs/_2)@kL!sCpQtg)l^*AWZ)Y?Z1dU\pBZMAis5P0@tZ7oh\8uf2+q]kf4"B+mT$qF@Rao0/ConXKSF:_]ftPT$8?6nc0R#lB%6=@PZ?On7B2;ZB'&mA1gC2pF.dI_Zkfd`*)1E3=3Do8X-I3TnqrpI=eb#kP3X^\A_,uL4;;u;!cdV>rlYH36#l:8="QKjpe1fr%&.0X%af7E,'h<mK[$o-(6/-=oRo+@>k@`V1q9u,5Opn9K5neI*2c@uGoLXS$:>_S,&']k]hCHfKZ-:Bg`Uqk+->Hkm1lVM!f`+eD@s;d;g6*8N,UhO7A_Q7S%*0Jao,`MI`6+%0P_@8Ho<_e%(0*ae=!ub!0+89jIEi%GZ7X&2lBEONQ:fYE:_Ac7RJbOb-"K3>[C6kkW2;dZ@!KoiUp\ca\i6=1_f!WqE=8-gRXND>"V^lfDt(`&kW+EL/OR8R$2,G$U[4oTQ=.iYtj-Xe#\K5]fS^B#6>[*VJFrkeMeItTebsie5q-U9t^0Mm-u4SIer*k1S(<%bQ2(]b9k02>^d3N8jc0tQL9c_IIi<5OPkXc&fh"cG5iL[[rgHK<mn"lFsCZ<,XJ90GqsD,bG'K1TCLDeKl7-\mG"dt+lch2Wa:\]71T$:jk@(H(Ru*b@1^%?k#DV>6X/oSAQlfkqarB7B@eM;\]#;%0iZ4!0PIP7caYJ%=$8oN#mpgk2LL0l8DGIVdn(=U*5i9!#g296ZGP*K2EGI4n*@q1G=@1k03c,t\H\2fqZcJ`048D<np^)9a$)<6QCu\1)Q.TGWr2A!$a+7c@US*#`Fg%_W]*sn[Ht&k`A1cB*.\6KEGj9LN.+p]W$o.Y=ab3j'i0$!9=9@`iMTnB!aauj#B2V2_6E"RkFkkFmShqI>O/_t18_^p&OAreFBc\3bV/`6qrL_"\)#_nhd=o](OMf78Ru\NRY)&LS[@bPm-QMUC9fAW4'FI,/eW8LZe)Im/;"DtnQ_FH)V3M\%U\[4O^FBA3IKdYODRWK\5PZ&R-u*F>[H:[2jJUC[D]#N?H="B7VL$d08tS=aU1dA=`=^XU_=DrI"&]oUt/RNn9]\]j#((#NsEQaDZ[.G_0GIhc&.3_=$)D%MgAe7b?2GGHan5UUt9f<34SfeIp3d8,nDG7ITZ^U5huedUI8ep5Wc04]6>5:ZFEWF%\l<M5e`q>kN90+dT(;-Cfp!o`%.1i/g4g,>QG9X93Ff&DO6)0G%8&,XS9ZH^Z!e@L5>Pf^to_Mr`hXAP`G_R2',kX~>
+endstream
+endobj
+20 0 obj
+<<
+/Author (ADLM Studio)
+/CreationDate (D\07220260718220437\05300\04700\047)
+/Creator (\050unspecified\051)
+/Keywords ()
+/ModDate (D\07220260718220437\05300\04700\047)
+/Producer (ReportLab PDF Library \055 \050opensource\051)
+/Subject (\050unspecified\051)
+/Title (BK\055Ingest Final Build Report \046 API Cost Analysis)
+/Trapped /False
+>>
+endobj
+21 0 obj
+<<
+/Length 7686
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+q
+.784314 .643137 .294118 RG
+2 w
+n 56.69291 807.874 m 538.5827 807.874 l S
+BT /F2 8 Tf 9.6 TL ET
+.058824 .164706 .290196 rg
+BT 1 0 0 1 56.69291 814.9606 Tm (BK-INGEST  \267  FINAL BUILD REPORT) Tj T* ET
+BT /F1 8 Tf 9.6 TL ET
+.290196 .333333 .407843 rg
+BT 1 0 0 1 491.4547 814.9606 Tm (ADLM Studio) Tj T* ET
+BT /F1 7.5 Tf 9 TL ET
+BT 1 0 0 1 56.69291 34.01575 Tm (BK-Ingest Final Build Report & API Cost Analysis  \267  v1.0  \267  18 July 2026) Tj T* ET
+BT 1 0 0 1 514.8152 34.01575 Tm (Page 1) Tj T* ET
+.788235 .823529 .870588 RG
+.6 w
+n 56.69291 42.51969 m 538.5827 42.51969 l S
+Q
+q
+1 0 0 1 62.69291 750.5276 cm
+q
+BT 1 0 0 1 0 4 Tm 23 TL /F2 19 Tf .058824 .164706 .290196 rg (Final Build Report & API Cost Analysis) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 734.5276 cm
+q
+.290196 .333333 .407843 rg
+BT 1 0 0 1 0 3.5 Tm /F1 10.5 Tf 14 TL (BK-Ingest \227 AI-Powered Catalog Onboarding, Proof of Concept) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 731.5276 cm
+Q
+q
+1 0 0 1 56.69291 583.5276 cm
+q
+0 0 0 rg
+BT /F1 10 Tf 12 TL ET
+q
+1 0 0 1 5 132.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Prepared by) Tj T* ET
+Q
+Q
+q
+1 0 0 1 84.37008 120.8 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F1 8.8 Tf 11.6 TL (ADLM Studio \227 Adedolapo Quasim \(engineer of) Tj T* (record\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 299.8031 132.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Date) Tj T* ET
+Q
+Q
+q
+1 0 0 1 367.8346 132.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F1 8.8 Tf 11.6 TL (18 July 2026) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 101.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Client) Tj T* ET
+Q
+Q
+q
+1 0 0 1 84.37008 101.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F1 8.8 Tf 11.6 TL (BuildersKonnect \(BK\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 299.8031 101.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Build window) Tj T* ET
+Q
+Q
+q
+1 0 0 1 367.8346 89.6 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F1 8.8 Tf 11.6 TL (17\22618 Jul 2026 \267 all 5) Tj T* (milestones complete) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 70 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Repository) Tj T* ET
+Q
+Q
+q
+1 0 0 1 84.37008 70 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F1 8.8 Tf 11.6 TL (github.com/adedola12/Bk-PoC) Tj T* ET
+Q
+Q
+q
+1 0 0 1 299.8031 70 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Live) Tj T* ET
+Q
+Q
+q
+1 0 0 1 366.8346 58.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F1 8.5 Tf 11.6 TL (bk-po-c.vercel.app \(client\) \267) Tj T* (bk-poc-1.onrender.com \(API\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 38.8 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Governing docs) Tj T* ET
+Q
+Q
+q
+1 0 0 1 84.37008 4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 37.6 Tm /F1 8.8 Tf 11.6 TL (Knowledge Base v1.1 \267 Design Document v1.0 \267) Tj T* (Addendum D8\226D11 \267 Acceptance Tests v1.0) Tj T* (\(ratified\) \267 BUILD_PROMPT.md \267 DECISIONS.md) Tj T* (\(D12\226D19\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 299.8031 27.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F2 8.8 Tf 11.6 TL (Evaluation) Tj T* (day) Tj T* ET
+Q
+Q
+q
+1 0 0 1 367.8346 27.2 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 14.4 Tm /F1 8.8 Tf 11.6 TL (31 July 2026 \(13 days) Tj T* (ahead of plan\)) Tj T* ET
+Q
+Q
+q
+1 J
+1 j
+.788235 .823529 .870588 RG
+.5 w
+n 0 148 m 481.8898 148 l S
+n 0 0 m 481.8898 0 l S
+n 0 0 m 0 148 l S
+n 481.8898 0 m 481.8898 148 l S
+n 0 116.8 m 481.8898 116.8 l S
+n 0 85.6 m 481.8898 85.6 l S
+n 0 54.4 m 481.8898 54.4 l S
+n 79.37008 0 m 79.37008 148 l S
+n 294.8031 0 m 294.8031 148 l S
+n 362.8346 0 m 362.8346 148 l S
+Q
+Q
+Q
+q
+1 0 0 1 62.69291 553.5276 cm
+q
+.058824 .164706 .290196 rg
+BT 1 0 0 1 0 3.5 Tm /F2 13.5 Tf 17 TL (1. Executive Summary) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 397.9276 cm
+q
+BT 1 0 0 1 0 139.8 Tm 13.6 TL /F1 9.8 Tf 0 0 0 rg (BK-Ingest is complete and live. The system accepts arbitrary vendor uploads \227 PDF catalogs, datasheets,) Tj T* (Excel, Word, product images, or a manufacturer weblink \227 and converts them into BK) Tj (\222) Tj (s exact bulk-upload) Tj T* (Excel template, with AI performing the reading and a per-field confidence system deciding what passes) Tj T* (automatically and what a human must see. Its two governing promises are demonstrated and under) Tj T* (automated test: ) Tj /F2 9.8 Tf (nothing wrong enters the catalog silently, and nothing is dismissed silently) Tj /F1 9.8 Tf (. Against) Tj T* (the ratified acceptance tests, the PoC passes seven of eight outright; the eighth \(field accuracy, T2\) stands) Tj T* (at 94.7% interim \227 100% after brand resolution \227 and awaits only ~30 minutes of human ground-truth) Tj T* -0.012143 Tw (verification to become final. Every metric in this report is regenerable from the repository \() Tj /F3 9.8 Tf (npm test \267 npm) Tj T* 0 Tw (run eval \267 npm run probe) Tj /F1 9.8 Tf (\). Section 8 provides the Anthropic API cost analysis requested: measured) Tj T* (unit economics, projections from pilot to full production, and the funding recommendation to run the system) Tj T* (at maximum power.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 367.9276 cm
+q
+.058824 .164706 .290196 rg
+BT 1 0 0 1 0 3.5 Tm /F2 13.5 Tf 17 TL (2. Delivery vs. Commitment) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 253.1276 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 99 Tm /F1 9.8 Tf 13.6 TL (The client brief asked for a designed solution and, where necessary, a proof of concept demonstrating) Tj T* (AI-driven extraction, classification, mapping and transformation into the bulk-upload template with minimal) Tj T* (human intervention \227 evaluated on thought process, engineering approach, scalability, accuracy and) Tj T* -0.052818 Tw (real-world handling. ADLM committed a working demonstration on the five representative catalogs within two) Tj T* 0 Tw (weeks of receiving materials. Materials arrived 17 July; the complete system \227 pipeline, 7-page showcase) Tj T* (UI, evaluation harness, and live deployment \227 was finished 18 July, thirteen days ahead of the committed) Tj T* (window. All work remained inside PoC boundaries: standalone build, no BK codebase integration \(per brief\),) Tj T* (evaluated solely on the provided sample set.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62.69291 223.1276 cm
+q
+.058824 .164706 .290196 rg
+BT 1 0 0 1 0 3.5 Tm /F2 13.5 Tf 17 TL (3. What the System Does, End to End) Tj T* ET
+Q
+Q
+q
+1 0 0 1 56.69291 100.3276 cm
+q
+.058824 .164706 .290196 rg
+n 0 116.8 481.8898 -19.6 re f*
+.94902 .956863 .968627 rg
+n 0 54.4 481.8898 -54.4 re f*
+0 0 0 rg
+BT /F1 10 Tf 12 TL ET
+q
+1 0 0 1 5 101.2 cm
+q
+1 1 1 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Stage) Tj T* ET
+Q
+Q
+q
+1 0 0 1 129.7244 101.2 cm
+q
+1 1 1 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Behavior delivered) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 70 cm
+q
+BT 1 0 0 1 0 14.4 Tm 11.6 TL /F2 8.8 Tf 0 0 0 rg (Upload & triage \(D7, D12,) Tj T* (D16\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 129.7244 58.4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 26 Tm /F1 8.8 Tf 11.6 TL (Files dragged in or a weblink pasted \(bounded crawl\). Every source classified before) Tj T* (extraction: bk_template / catalogue / product_datasheet / product_image /) Tj T* (vendor_document / other.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 5 38.8 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 2.8 Tm /F2 8.8 Tf 11.6 TL (Triage verification \(D11\)) Tj T* ET
+Q
+Q
+q
+1 0 0 1 129.7244 4 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 37.6 Tm /F1 8.8 Tf 11.6 TL (Non-product classifications surface a snapshot + AI-summary card; a human confirms or) Tj T* (reclassifies before filing. Confirmed vendor documents parse into structured vendor) Tj T* (profiles \(Satkay Limited is the reference case: RC 196060, 10-yr warranty, MOQ 1, 48-hr) Tj T* (delivery\).) Tj T* ET
+Q
+Q
+q
+1 J
+1 j
+.788235 .823529 .870588 RG
+.5 w
+n 0 116.8 m 481.8898 116.8 l S
+n 0 0 m 0 116.8 l S
+n 481.8898 0 m 481.8898 116.8 l S
+n 0 0 m 481.8898 0 l S
+n 0 97.2 m 481.8898 97.2 l S
+n 0 54.4 m 481.8898 54.4 l S
+n 124.7244 0 m 124.7244 116.8 l S
+Q
+Q
+Q
+ 
+
+endstream
+endobj
+xref
+0 22
+0000000000 65535 f 
+0000000015 00000 n 
+0000000083 00000 n 
+0000000177 00000 n 
+0000000377 00000 n 
+0000008115 00000 n 
+0000008176 00000 n 
+0000008283 00000 n 
+0000008395 00000 n 
+0000008500 00000 n 
+0000008577 00000 n 
+0000008778 00000 n 
+0000011977 00000 n 
+0000012178 00000 n 
+0000016222 00000 n 
+0000016423 00000 n 
+0000018452 00000 n 
+0000018653 00000 n 
+0000022657 00000 n 
+0000022858 00000 n 
+0000025733 00000 n 
+0000026089 00000 n 
+trailer
+<<
+/Size 22
+/Root 1 0 R
+/Info 20 0 R
+/ID [ <0e969cd130373c7419c0046625ca6b38> <0e969cd130373c7419c0046625ca6b38> ]
+>>
+startxref
+33828
+%%EOF

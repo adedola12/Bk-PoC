@@ -22,7 +22,7 @@ of record; I ratify decisions. Evaluation day with the client is **31-Jul-2026**
   (100% post-Stage-5) — final only after my ground-truth verification.
 - 57/57 Vitest tests green (`cd server && npx vitest run`); client builds clean.
 - Deployed: client `https://bk-po-c.vercel.app` (Vercel, `VITE_API_BASE` set), API
-  `https://bk-poc.onrender.com` (Render free; env vars in dashboard; CORS normalizes origins
+  `https://bk-poc-1.onrender.com` (Render free; env vars in dashboard; CORS normalizes origins
   and auto-allows `bk-po-c*.vercel.app` previews). Auto-deploy from GitHub `main`
   (`adedola12/Bk-PoC`).
 - Data: Atlas `bkIngest` holds 42 IPR rows (21 Twyford template + 1 Alca + 10 Jaquar +

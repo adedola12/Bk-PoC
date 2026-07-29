@@ -1,0 +1,11 @@
+# Binary deliverables — never apply EOL conversion. Some PDFs here store
+# uncompressed content streams, so git's NUL-byte heuristic misdetects them
+# as text and would corrupt them on checkout.
+*.pdf   binary
+*.docx  binary
+*.dotx  binary
+*.xlsx  binary
+*.zip   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
