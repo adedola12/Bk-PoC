@@ -3,25 +3,16 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {
-  FiUploadCloud,
-  FiCheckSquare,
-  FiInbox,
-  FiList,
-  FiBox,
-  FiTrendingUp,
-  FiFileText,
-} from "react-icons/fi";
+import { FiUploadCloud, FiCheckSquare, FiBox } from "react-icons/fi";
 
-/* ─────────── navigation — full PoC surface (Milestone E) ─────────── */
+/* ─────────── navigation — the three demo steps.
+   The review queue, todo list, price comparison and run report stay routed
+   (/review, /todo, /prices, /report) so they can be opened on demand, but
+   they are off the main flow: load → process → fill. ─────────── */
 const NAV = [
-  { to: "/upload", label: "Upload", icon: FiUploadCloud },
-  { to: "/triage", label: "Triage Verify", icon: FiCheckSquare },
-  { to: "/review", label: "Review Queue", icon: FiInbox },
-  { to: "/todo", label: "Todo", icon: FiList },
-  { to: "/products", label: "Products", icon: FiBox },
-  { to: "/prices", label: "Price Compare", icon: FiTrendingUp },
-  { to: "/report", label: "Run Report", icon: FiFileText },
+  { to: "/upload", step: 1, label: "Load file", icon: FiUploadCloud },
+  { to: "/triage", step: 2, label: "Process file", icon: FiCheckSquare },
+  { to: "/products", step: 3, label: "Fill template", icon: FiBox },
 ];
 
 const greeting = () => {
@@ -55,7 +46,7 @@ export default function App() {
         </div>
 
         <nav className="mt-2 flex-1 space-y-1 px-3">
-          {NAV.map(({ to, label, icon: Icon }) => (
+          {NAV.map(({ to, step, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -67,8 +58,20 @@ export default function App() {
                 }`
               }
             >
-              <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden />
-              {label}
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                      isActive ? "bg-bk-gold text-bk-navy-deep" : "bg-white/15 text-white/70"
+                    }`}
+                    aria-hidden
+                  >
+                    {step}
+                  </span>
+                  <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden />
+                  {label}
+                </>
+              )}
             </NavLink>
           ))}
 

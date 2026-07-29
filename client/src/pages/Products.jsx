@@ -1,8 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { FiPlay, FiDownload, FiBox, FiTruck, FiTag, FiSearch } from "react-icons/fi";
-import { fetchIprs, fetchTriage, extractUpload, runEmission, emissionDownloadUrl, errMsg } from "../api.js";
+import { FiDownload, FiBox, FiTruck, FiTag, FiSearch } from "react-icons/fi";
+import { fetchIprs, runEmission, emissionDownloadUrl, errMsg } from "../api.js";
 
 const DISPOSITION = {
   PASS: "bg-emerald-100 text-emerald-800",
@@ -13,18 +13,14 @@ const DISPOSITION = {
 /* ─── extracted products with per-field provenance + one-click emission ─── */
 export default function Products() {
   const [iprs, setIprs] = React.useState([]);
-  const [uploads, setUploads] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [busy, setBusy] = React.useState(null);
   const [emission, setEmission] = React.useState(null);
   const [query, setQuery] = React.useState("");
 
   const load = React.useCallback(() => {
-    Promise.all([fetchIprs(), fetchTriage()])
-      .then(([i, u]) => {
-        setIprs(Array.isArray(i) ? i : []);
-        setUploads(Array.isArray(u) ? u : []);
-      })
+    fetchIprs()
+      .then((i) => setIprs(Array.isArray(i) ? i : []))
       .catch((err) => toast.error(errMsg(err, "Could not load products")))
       .finally(() => setLoading(false));
   }, []);
@@ -32,30 +28,6 @@ export default function Products() {
   React.useEffect(() => {
     load();
   }, [load]);
-
-  const extractable = [
-    ...new Map(
-      uploads
-        .filter((u) => {
-          const label = u.triage?.verifiedLabel || u.triage?.label;
-          return ["product_datasheet", "bk_template", "catalogue"].includes(label);
-        })
-        .map((u) => [u.originalName, u]) // newest ledger entry per filename
-    ).values(),
-  ];
-
-  const runExtract = async (upload) => {
-    setBusy(upload._id);
-    try {
-      const r = await extractUpload(upload._id);
-      toast.success(`${r.count} row(s) extracted from ${upload.originalName}${r.anomaliesFlagged ? ` · ${r.anomaliesFlagged} anomalies → review` : ""}`);
-      load();
-    } catch (err) {
-      toast.error(errMsg(err, "Extraction failed"));
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const emit = async () => {
     setBusy("emit");
@@ -138,25 +110,6 @@ export default function Products() {
               </a>
             ))}
           </p>
-        </div>
-      )}
-
-      {extractable.length > 0 && (
-        <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Run extraction</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {extractable.map((u) => (
-              <button
-                key={u._id}
-                onClick={() => runExtract(u)}
-                disabled={busy === u._id}
-                className="flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold disabled:opacity-50"
-              >
-                <FiPlay className="h-3 w-3" aria-hidden />
-                {busy === u._id ? "Extracting…" : u.originalName}
-              </button>
-            ))}
-          </div>
         </div>
       )}
 

@@ -1,8 +1,12 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { FiAlertTriangle, FiCheck, FiRefreshCw, FiSearch, FiCheckCircle } from "react-icons/fi";
-import { fetchTriage, verifyTriage, verifyAllTriage, previewUrl, errMsg } from "../api.js";
+import { FiAlertTriangle, FiCheck, FiRefreshCw, FiSearch, FiCheckCircle, FiPlay } from "react-icons/fi";
+import { fetchTriage, verifyTriage, verifyAllTriage, extractUpload, previewUrl, errMsg } from "../api.js";
+
+// files whose route makes them extractable — step 2 runs the pipeline here so
+// "process file" is one place: confirm the classification, then extract.
+const EXTRACTABLE = ["product_datasheet", "bk_template", "catalogue"];
 
 const LABELS = ["bk_template", "catalogue", "product_datasheet", "product_image", "vendor_document", "other"];
 
@@ -27,6 +31,7 @@ export default function TriageVerify() {
   const [loading, setLoading] = React.useState(true);
   const [query, setQuery] = React.useState("");
   const [bulkBusy, setBulkBusy] = React.useState(false);
+  const [busy, setBusy] = React.useState(null);
 
   const load = React.useCallback(() => {
     fetchTriage()
@@ -61,6 +66,32 @@ export default function TriageVerify() {
       setBulkBusy(false);
     }
   };
+
+  const runExtract = async (upload) => {
+    setBusy(upload._id);
+    try {
+      const r = await extractUpload(upload._id);
+      toast.success(
+        `${r.count} row(s) extracted from ${upload.originalName}${
+          r.anomaliesFlagged ? ` · ${r.anomaliesFlagged} anomalies → review` : ""
+        }`
+      );
+      load();
+    } catch (err) {
+      toast.error(errMsg(err, "Extraction failed"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // newest ledger entry per filename, extractable routes only
+  const extractable = [
+    ...new Map(
+      items
+        .filter((u) => EXTRACTABLE.includes(u.triage?.verifiedLabel || u.triage?.label))
+        .map((u) => [u.originalName, u])
+    ).values(),
+  ];
 
   // search across filename, route label and AI summary
   const q = query.trim().toLowerCase();
@@ -128,6 +159,28 @@ export default function TriageVerify() {
           </button>
         </div>
       </div>
+
+      {extractable.length > 0 && (
+        <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500">Run extraction</h3>
+          <p className="mt-1 text-xs text-slate-600">
+            Confirm any classification above, then extract. Products land in step 3.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {extractable.map((u) => (
+              <button
+                key={u._id}
+                onClick={() => runExtract(u)}
+                disabled={busy === u._id}
+                className="flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold disabled:opacity-50"
+              >
+                <FiPlay className="h-3 w-3" aria-hidden />
+                {busy === u._id ? "Extracting…" : u.originalName}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {pending.map((item) => (
