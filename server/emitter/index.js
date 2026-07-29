@@ -1,4 +1,6 @@
 import ExcelJS from "exceljs";
+import JSZip from "jszip";
+import fs from "node:fs";
 import path from "node:path";
 import { cellText, normalizeHeader } from "../services/xlsx.js";
 
@@ -13,6 +15,37 @@ import { cellText, normalizeHeader } from "../services/xlsx.js";
  */
 
 const FORMULA_COLUMNS = ["System Product Name"]; // Instructions: auto-fills — never write
+
+/**
+ * Load the template with its font styles read correctly.
+ *
+ * BK's template writes boolean font attributes as explicitly-off tags —
+ * `<b val="0"/><i val="0"/><strike val="0"/>`. ExcelJS treats the presence of
+ * the tag as true and ignores `val`, so a straight `readFile` reports every
+ * cell as bold+italic+struck-through and writes that back out: the whole
+ * emission renders crossed out. Excel and openpyxl both read the file
+ * correctly, so the template itself is fine.
+ *
+ * Strip the zero-valued tags before ExcelJS parses. Tags with `val="1"` are
+ * left alone, so genuinely bold headers survive; the template file on disk is
+ * never modified (fixtures stay read-only, §6.6).
+ */
+async function loadTemplateWorkbook(templatePath) {
+  const zip = await JSZip.loadAsync(fs.readFileSync(templatePath));
+  const styles = zip.file("xl/styles.xml");
+  if (styles) {
+    const xml = await styles.async("string");
+    const fixed = xml.replace(/<fonts[\s\S]*?<\/fonts>/, (fonts) =>
+      fonts
+        .replace(/<(b|i|strike|outline|shadow|condense|extend)\s+val="(?:0|false)"\s*\/>/g, "")
+        .replace(/<u\s+val="none"\s*\/>/g, "")
+    );
+    if (fixed !== xml) zip.file("xl/styles.xml", fixed);
+  }
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(await zip.generateAsync({ type: "nodebuffer" }));
+  return wb;
+}
 
 /** Find the header row: first row whose cells contain a `*`-marked header, else densest row. */
 function findHeaderRow(ws) {
@@ -139,8 +172,8 @@ export async function emitRows(templatePath, rows, outPathBase) {
 
   const written = [];
   for (let s = 0; s < shards.length; s++) {
-    const wb = new ExcelJS.Workbook();
-    await wb.xlsx.readFile(templatePath); // fresh copy — keeps styles, lookups, instructions
+    // fresh copy — keeps styles, lookups, instructions (fonts de-mangled)
+    const wb = await loadTemplateWorkbook(templatePath);
     const ws = wb.getWorksheet("Template");
     shards[s].forEach((rowObj, i) => {
       const row = ws.getRow(schema.headerRow + 1 + i);
