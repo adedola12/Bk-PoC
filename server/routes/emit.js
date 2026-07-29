@@ -47,12 +47,21 @@ async function mapPool(items, limit, fn) {
 /* ─── POST /api/emit — Stage 7→10 over stored IPRs ─── */
 router.post("/", async (req, res, next) => {
   try {
-    const { generate = true, regenerate = false } = req.body ?? {};
+    const { generate = true, regenerate = false, uploadIds = [] } = req.body ?? {};
     const run = createRun("emit");
     const started = Date.now();
 
-    const iprs = await IPR.find({}).populate("upload", "originalName triage storedPath").lean();
-    if (!iprs.length) return res.status(400).json({ error: "No IPRs to emit — run extraction first" });
+    // uploadIds narrows the emission to those source files — a walkthrough
+    // emits only what it just processed. Empty emits the whole store.
+    const scope = uploadIds.length ? { upload: { $in: uploadIds } } : {};
+    const iprs = await IPR.find(scope).populate("upload", "originalName triage storedPath").lean();
+    if (!iprs.length) {
+      return res.status(400).json({
+        error: uploadIds.length
+          ? "No extracted rows for the selected files — run extraction first"
+          : "No IPRs to emit — run extraction first",
+      });
+    }
 
     const schema = await readTemplateSchema(TEMPLATE);
     const examples = await styleExamples();
