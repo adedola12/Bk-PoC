@@ -67,12 +67,19 @@ router.post("/:uploadId/extract", async (req, res, next) => {
       await resolveIprBrand(ipr, { sourceFile: upload.originalName });
       ipr.taxonomyIds = await resolveTaxonomyIds(ipr.taxonomyPath);
       if (ipr.taxonomyIds.pending && ipr.taxonomyPath) {
-        await TodoItem.create({
-          runId: run.runId,
-          type: "bk_id_pending",
-          detail: `BK category ID needed for "${ipr.taxonomyPath}"`,
-          sourceFile: upload.originalName,
-        });
+        // Upsert on the category, not per extraction — creating unconditionally
+        // duplicated the todo on every re-extract of the same taxonomy node
+        // (same fix as the price_missing queue in routes/emit.js). The detail
+        // string is derived from taxonomyPath, so it is the stable key; a todo
+        // already marked done is not silently reopened.
+        await TodoItem.updateOne(
+          { type: "bk_id_pending", detail: `BK category ID needed for "${ipr.taxonomyPath}"` },
+          {
+            $set: { runId: run.runId, sourceFile: upload.originalName },
+            $setOnInsert: { status: "open" },
+          },
+          { upsert: true }
+        );
       }
       iprs.push(...expandVariants(ipr));
     }
