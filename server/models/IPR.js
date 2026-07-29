@@ -58,6 +58,15 @@ const iprSchema = new mongoose.Schema(
     variantOfCode: { type: String, default: null }, // base product code (media/lineage inheritance)
     variantLabel: { type: String, default: null }, // e.g. "derived_unverified"
     disposition: { type: String, enum: ["PASS", "REVIEW", "TODO", null], default: null },
+    // Stage 8 output cached so a re-emit does not re-pay generation (D3).
+    // Cleared by passing { regenerate: true } to POST /emit.
+    generated: {
+      description: { type: String, default: null },
+      tags: { type: [String], default: undefined },
+      factChecked: { type: Boolean, default: null },
+      violations: { type: [String], default: undefined },
+      at: { type: Date, default: null },
+    },
   },
   { timestamps: true }
 );

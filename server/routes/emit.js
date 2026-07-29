@@ -26,10 +26,28 @@ async function styleExamples() {
   return styleExamplesCache;
 }
 
+/* Stage 8 generation is the emit hot path — one Claude call per un-described
+   row, and serially that dominates wall time (22 calls ≈ 160s of a 185s run).
+   Run them through a bounded pool instead; the cap keeps us well inside the
+   Anthropic rate limit while cutting the phase to roughly one call's latency
+   per batch. */
+const GENERATE_CONCURRENCY = 6;
+
+async function mapPool(items, limit, fn) {
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+}
+
 /* ─── POST /api/emit — Stage 7→10 over stored IPRs ─── */
 router.post("/", async (req, res, next) => {
   try {
-    const { generate = true } = req.body ?? {};
+    const { generate = true, regenerate = false } = req.body ?? {};
     const run = createRun("emit");
     const started = Date.now();
 
@@ -57,20 +75,48 @@ router.post("/", async (req, res, next) => {
       dispositions: { PASS: 0, REVIEW: 0, TODO: 0 },
       perCatalog: {},
       exemptions: {},
-      generation: { generated: 0, regenerated: 0, factCheckFailed: 0 },
+      generation: { generated: 0, regenerated: 0, reused: 0, factCheckFailed: 0 },
       media: { paired: paired.size, unpaired: unpaired.length },
       customDropdownValues: 0, // permitted by the template's Instructions; reported, not blocked
     };
 
-    for (const ipr of iprs) {
+    // Map each row once, then fill the missing Descriptions concurrently.
+    // Cached Stage 8 output is reused unless the caller asks to regenerate, so
+    // a second emit of an unchanged catalog costs no AI calls at all.
+    const prepared = iprs.map((ipr) => ({ ipr, ...mapIprToRow(ipr, schema) }));
+    const wantsContent = (p) => generate && !p.ipr.templateRow && !p.row["Description"];
+    const pending = prepared.filter(
+      (p) => wantsContent(p) && (regenerate || !p.ipr.generated?.description)
+    );
+    await mapPool(pending, GENERATE_CONCURRENCY, async (p) => {
+      p.gen = await generateContent(p.ipr, examples, { log: run.log });
+      await IPR.updateOne(
+        { _id: p.ipr._id },
+        {
+          generated: {
+            description: p.gen.description,
+            tags: p.gen.tags,
+            factChecked: p.gen.factChecked,
+            violations: p.gen.violations,
+            at: new Date(),
+          },
+        }
+      );
+    });
+
+    for (const p of prepared) {
+      const { ipr, row, profile, dropdownFlags } = p;
       const catalog = ipr.upload?.originalName ?? "unknown";
-      const { row, profile, dropdownFlags } = mapIprToRow(ipr, schema);
 
       let factChecked = true;
-      if (generate && !ipr.templateRow && !row["Description"]) {
-        const gen = await generateContent(ipr, examples, { log: run.log });
-        report.generation.generated++;
-        if (gen.regenerated) report.generation.regenerated++;
+      const gen = p.gen ?? (wantsContent(p) ? ipr.generated : null);
+      if (gen?.description) {
+        if (p.gen) {
+          report.generation.generated++;
+          if (p.gen.regenerated) report.generation.regenerated++;
+        } else {
+          report.generation.reused++;
+        }
         if (!gen.factChecked) {
           report.generation.factCheckFailed++;
           factChecked = false;
@@ -78,11 +124,11 @@ router.post("/", async (req, res, next) => {
             runId: run.runId,
             ipr: ipr._id,
             reason: "fact_check_failed",
-            detail: gen.violations.join("; "),
+            detail: (gen.violations ?? []).join("; "),
           });
         }
         row["Description"] = gen.description;
-        row["Tags"] = gen.tags.join(",");
+        row["Tags"] = (gen.tags ?? []).join(",");
       }
 
       const cover = mediaUrlFor(ipr, paired);
@@ -100,16 +146,25 @@ router.post("/", async (req, res, next) => {
       cat.total++;
       for (const ex of gate.exemptions) report.exemptions[ex] = (report.exemptions[ex] || 0) + 1;
 
-      // D4: TODO rows emit with blank price + todo entry
+      // D4: TODO rows emit with blank price + todo entry. Upsert on the SKU —
+      // creating unconditionally meant every re-emit duplicated the whole
+      // queue (600 rows had accumulated across runs). A todo already marked
+      // done is left alone rather than silently reopened.
       if (gate.disposition === "TODO") {
-        await TodoItem.create({
-          runId: run.runId,
-          type: "price_missing",
-          vendor: "Satkay Limited",
-          sku: row["Product SKU"] || ipr.identity?.productCode?.value || null,
-          detail: `price missing for ${row["Unique Product Name"] || "row"}`,
-          sourceFile: catalog,
-        });
+        const sku = row["Product SKU"] || ipr.identity?.productCode?.value || null;
+        await TodoItem.updateOne(
+          { type: "price_missing", sku },
+          {
+            $set: {
+              runId: run.runId,
+              vendor: "Satkay Limited",
+              detail: `price missing for ${row["Unique Product Name"] || "row"}`,
+              sourceFile: catalog,
+            },
+            $setOnInsert: { status: "open" },
+          },
+          { upsert: true }
+        );
       }
 
       if (gate.disposition !== "REVIEW") {
