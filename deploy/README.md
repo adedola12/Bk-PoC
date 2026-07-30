@@ -147,6 +147,43 @@ with a trailing slash still matches.
 
 ---
 
+## Deploying without SSH (sandboxed or CI machines)
+
+`go-live.sh` assumes the operator's machine can SSH to the box and build the
+image locally. Neither holds in a sandboxed agent environment: outbound port 22
+is closed, and the Docker Hub and ECR Public **layer CDNs are blocked**, so
+`docker build` fails fetching its own base image.
+
+`deploy/05-deploy-via-ssm.sh` is the path for those machines. Everything goes
+over the AWS API on 443:
+
+```bash
+./deploy/03-provision-infra.sh     # as normal
+./deploy/write-env-migration.sh    # secrets from the environment
+./deploy/05-deploy-via-ssm.sh      # build + deploy on the instance itself
+./deploy/02-deploy-frontend.sh     # frontend still publishes fine from anywhere
+```
+
+It stages config in **SSM Parameter Store** (secrets as KMS-encrypted
+`SecureString`, never as Run Command parameters — those stay readable in the
+console and CloudTrail for 30 days), then uses **Run Command** to make the
+instance clone the repo, build the image, push it to ECR and start the stack.
+Because the image still lands in ECR, the `./update.sh` redeploy path below is
+unaffected.
+
+Override the source it builds with `GIT_REPO` / `GIT_REF`; `GIT_REF` defaults
+to the branch currently checked out, so **push your branch before running it**.
+
+Consequences of this path, both deliberate:
+
+- **Port 22 is never opened.** Shell access is
+  `aws ssm start-session --target <instance-id>`. `03-provision-infra.sh` no
+  longer derives an SSH rule from the machine's egress IP — behind a shared or
+  proxied network that address belongs to other tenants too.
+- The instance role carries a **scoped** ECR push policy (that one repository),
+  not the blanket `PowerUser` policy, so a compromised box cannot write to any
+  other registry.
+
 ## Routine redeploys
 
 ```bash
@@ -154,6 +191,8 @@ with a trailing slash still matches.
 ssh ec2-user@<ip> 'cd /opt/bk && ./update.sh'          # API: pull + restart
 ./deploy/02-deploy-frontend.sh                         # frontend: build + sync + invalidate
 ```
+
+…or, with no SSH: `./deploy/05-deploy-via-ssm.sh` (rebuilds and restarts).
 
 ## Verification after cutover
 

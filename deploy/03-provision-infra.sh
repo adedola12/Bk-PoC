@@ -44,19 +44,46 @@ aws ecr put-lifecycle-policy --repository-name "$ECR_REPO" --region "$AWS_REGION
   >/dev/null 2>&1 || true
 
 # ───────────────────── IAM instance role ─────────────────────
-say "EC2 instance role (ECR pull access)"
+# Two managed policies:
+#   ECR read-only          — pull the API image
+#   SSMManagedInstanceCore — administer the box over the AWS API instead of SSH.
+# The latter is what lets a deploy run from an environment with no outbound
+# port 22 (see 05-deploy-via-ssm.sh); it also means the security group never
+# needs an SSH rule.
+say "EC2 instance role (ECR pull + SSM management)"
 ROLE=bk-ingest-ec2-role
 if ! aws iam get-role --role-name "$ROLE" >/dev/null 2>&1; then
   aws iam create-role --role-name "$ROLE" --assume-role-policy-document \
     '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}' >/dev/null
-  aws iam attach-role-policy --role-name "$ROLE" \
-    --policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly >/dev/null
   aws iam create-instance-profile --instance-profile-name "$ROLE" >/dev/null
   aws iam add-role-to-instance-profile --instance-profile-name "$ROLE" --role-name "$ROLE" >/dev/null
   echo "    created $ROLE (waiting 10s for IAM propagation)"; sleep 10
 else
   echo "    $ROLE already exists"
 fi
+# Attaching is idempotent, so this also repairs a role created before SSM was
+# required, rather than only applying to brand-new roles.
+for POL in AmazonEC2ContainerRegistryReadOnly AmazonSSMManagedInstanceCore; do
+  aws iam attach-role-policy --role-name "$ROLE" \
+    --policy-arn "arn:aws:iam::aws:policy/${POL}" >/dev/null
+  echo "    policy attached: $POL"
+done
+
+# Push rights on this ONE repository, so the image can be built on the instance
+# when the operator's machine cannot (no Docker, or a network that blocks the
+# registry CDNs). Scoped to the single repo ARN rather than using the blanket
+# PowerUser policy: a compromised instance still cannot touch other registries.
+aws iam put-role-policy --role-name "$ROLE" --policy-name bk-ingest-ecr-push \
+  --policy-document "$(cat <<JSON
+{"Version":"2012-10-17","Statement":[
+  {"Effect":"Allow","Action":"ecr:GetAuthorizationToken","Resource":"*"},
+  {"Effect":"Allow","Resource":"arn:aws:ecr:${AWS_REGION}:${ACCOUNT_ID}:repository/${ECR_REPO}",
+   "Action":["ecr:BatchCheckLayerAvailability","ecr:CompleteLayerUpload",
+             "ecr:InitiateLayerUpload","ecr:PutImage","ecr:UploadLayerPart"]}
+]}
+JSON
+)" >/dev/null
+echo "    inline policy: bk-ingest-ecr-push (scoped to $ECR_REPO)"
 
 # ─────────────────────── security group ───────────────────────
 say "Security group"
@@ -74,14 +101,20 @@ if [ "$SG_ID" = "None" ] || [ -z "$SG_ID" ]; then
     --ip-permissions \
       'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0,Description="ACME + redirect"}]' \
       'IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=0.0.0.0/0,Description="API"}]' >/dev/null
-  MYIP="$(curl -s https://checkip.amazonaws.com || echo '')"
-  if [ -n "$MYIP" ]; then
-    aws ec2 authorize-security-group-ingress --region "$AWS_REGION" --group-id "$SG_ID" \
-      --ip-permissions "IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=${MYIP}/32,Description=\"admin ssh\"}]" >/dev/null
-    echo "    ssh restricted to ${MYIP}/32"
-  else
-    echo "    !! could not determine your IP — add an SSH rule manually, do NOT open 22 to 0.0.0.0/0"
-  fi
+fi
+# No SSH rule by default. Shell access comes from SSM Session Manager, which
+# dials out from the instance over HTTPS, so port 22 stays shut to the internet:
+#     aws ssm start-session --target "$EC2_INSTANCE_ID" --region "$AWS_REGION"
+# Set ALLOW_SSH_FROM to a CIDR in .env.deploy if you want conventional SSH too.
+# Deliberately not derived from an auto-detected egress IP: on a shared or
+# proxied network that opens the box to every other tenant behind that address.
+if [ -n "${ALLOW_SSH_FROM:-}" ]; then
+  aws ec2 authorize-security-group-ingress --region "$AWS_REGION" --group-id "$SG_ID" \
+    --ip-permissions "IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=${ALLOW_SSH_FROM},Description=\"admin ssh\"}]" \
+    >/dev/null 2>&1 || true
+  echo "    ssh allowed from ${ALLOW_SSH_FROM}"
+else
+  echo "    port 22 closed — use: aws ssm start-session --target <instance-id>"
 fi
 setconf SECURITY_GROUP_ID "$SG_ID"
 
