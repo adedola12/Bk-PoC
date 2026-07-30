@@ -55,8 +55,9 @@ All six sections of `06-verify-live.sh` pass.
 | Caddy container | `Up`, certificate issued | `bk-caddy-1` |
 | MongoDB Atlas | connected | `/healthz` → `{"ok":true,"db":true}` |
 | API routes | all 200 | `/api/triage`, `/api/pipeline/iprs`, `/api/reports/latest`, `/api/review`, `/api/todos` |
-| **CORS (browser path)** | **verified both ways** | preflight from CloudFront origin allowed; unknown origin refused (403) |
-| Frontend | published | S3 `bk-poc-frontend-adlm` → CloudFront `d3kbhx0i6234ut.cloudfront.net` (`E22ZN5Q70Y20EF`) |
+| **CORS (browser path)** | **verified both ways** | preflight from `https://bk.adlmstudio.com` allowed; unknown origin refused (403) |
+| Frontend | published, on a custom domain | `https://bk.adlmstudio.com` → CloudFront `d3kbhx0i6234ut.cloudfront.net` (`E22ZN5Q70Y20EF`) → S3 `bk-poc-frontend-adlm` |
+| Frontend TLS | valid and trusted | ACM `CN=bk.adlmstudio.com`, expires 12-Feb-2027, auto-renewing |
 | SPA fallback | working | `/`, `/products`, `/review` and an unknown route all 200 |
 | Bundle API base | correct | `index-DXH5tPCG.js` calls `api-bk.adlmstudio.com` |
 | ECR image | pushed | `bk-ingest-api:latest` |
@@ -66,6 +67,28 @@ All six sections of `06-verify-live.sh` pass.
 CORS had never been exercised from a browser origin before — every earlier check
 used `curl`, which sends no `Origin` header. Section 4 now tests it for real, and
 it passes in both directions.
+
+## The frontend is on `bk.adlmstudio.com`
+
+`deploy/07-frontend-custom-domain.sh` requested an ACM certificate in
+**us-east-1** (CloudFront reads certificates from that region only, wherever the
+distribution and bucket live), created the DNS validation CNAME, attached the
+alias and certificate to `E22ZN5Q70Y20EF`, and pointed the name at the
+distribution with a Route 53 **alias A record** — free to query, and the only
+record type that would also work at a zone apex.
+
+The certificate had been requested during an earlier attempt and had sat in
+`PENDING_VALIDATION` ever since, because the validation CNAME could not be
+created while the account had no hosted zone. Creating that record cleared it in
+about two minutes.
+
+`d3kbhx0i6234ut.cloudfront.net` still answers — the alias adds a name, it does
+not replace one — but **demo from `https://bk.adlmstudio.com`**. The two are the
+same distribution and the same bundle.
+
+Note the apex `adlmstudio.com` still has no record of its own and does not
+resolve to anything. That is unchanged and unrelated: nothing in this deployment
+uses the apex.
 
 ## Still outstanding
 
@@ -102,8 +125,10 @@ tool for a pre-demo check.
 
 ## Notes for whoever runs the demo
 
-- Demo from **https://d3kbhx0i6234ut.cloudfront.net** — API at
-  **https://api-bk.adlmstudio.com**.
+- Demo from **https://bk.adlmstudio.com** — API at
+  **https://api-bk.adlmstudio.com**. The raw CloudFront URL
+  (`d3kbhx0i6234ut.cloudfront.net`) still works as a fallback for the same
+  distribution.
 - The EC2 container runs continuously — there is no Render-style cold start and
   nothing to warm up beforehand.
 - Deploys are an explicit script run, not auto-deploy from `main`.
@@ -111,6 +136,12 @@ tool for a pre-demo check.
   retired. **Neither is a usable fallback.** `bk-po-c.vercel.app` still serves
   (HTTP 200), which makes it look like one, but its production bundle
   (`index-B3shi2eG.js`) was built on 29-Jul, before the migration, so it calls
-  the Render API — and that account is suspended. Demo from the CloudFront URL
-  only. The Vercel origin is left in `CORS_ORIGINS` because removing it buys
-  nothing and would need an API restart.
+  the Render API — and that account is suspended. Demo from
+  `https://bk.adlmstudio.com` only.
+- `CORS_ORIGINS` on the box is `https://bk.adlmstudio.com,https://d3kbhx0i6234ut.cloudfront.net`.
+  An earlier revision of this file claimed the Vercel origin was in that list; it
+  is not, and has not been since the custom-domain work. It would still be
+  accepted at runtime, but by the `bk-po-c*.vercel.app` preview-URL regex in
+  `server/index.js:40`, not by the allowlist — which is worth knowing before
+  concluding from a passing browser call that `CORS_ORIGINS` contains something
+  it does not.

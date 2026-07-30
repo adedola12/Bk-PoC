@@ -36,7 +36,11 @@ warn() { printf '  \033[33m!\033[0m %s\n' "$1"; }
 step() { printf '\n\033[1;36m━━━ %s ━━━\033[0m\n' "$1"; }
 
 API="https://${API_DOMAIN}"
-FE="https://${CLOUDFRONT_DOMAIN}"
+# Verify the URL the demo actually uses. Once 07-frontend-custom-domain.sh has
+# attached an alias, the CloudFront domain still answers but is no longer the
+# origin browsers send — and CORS is checked per-origin, so testing the wrong
+# one passes while the real one fails.
+FE="https://${FRONTEND_DOMAIN:-$CLOUDFRONT_DOMAIN}"
 
 # ───────────────────────────── 1. DNS ─────────────────────────────
 # Checked first and explicitly: NXDOMAIN here is the single failure that also
