@@ -51,6 +51,11 @@ if ! aws iam get-role --role-name "$ROLE" >/dev/null 2>&1; then
     '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}' >/dev/null
   aws iam attach-role-policy --role-name "$ROLE" \
     --policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly >/dev/null
+  # SSM Session Manager as a fallback way in. Costs nothing, and means a lost
+  # .pem or a mistyped security-group rule does not lock you out of the box
+  # mid-demo: `aws ssm start-session --target <instance-id>` still works.
+  aws iam attach-role-policy --role-name "$ROLE" \
+    --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore >/dev/null
   aws iam create-instance-profile --instance-profile-name "$ROLE" >/dev/null
   aws iam add-role-to-instance-profile --instance-profile-name "$ROLE" --role-name "$ROLE" >/dev/null
   echo "    created $ROLE (waiting 10s for IAM propagation)"; sleep 10
@@ -92,7 +97,27 @@ INSTANCE_ID="$(aws ec2 describe-instances --region "$AWS_REGION" \
   --query 'Reservations[0].Instances[0].InstanceId' --output text 2>/dev/null || echo None)"
 
 if [ "$INSTANCE_ID" = "None" ] || [ -z "$INSTANCE_ID" ]; then
-  : "${SSH_KEY_NAME:?set SSH_KEY_NAME in deploy/.env.deploy to an existing EC2 key pair}"
+  : "${SSH_KEY_NAME:?set SSH_KEY_NAME in deploy/.env.deploy}"
+  # Create the key pair if it does not exist yet, rather than failing after the
+  # rest of the infrastructure is already built.
+  if ! aws ec2 describe-key-pairs --region "$AWS_REGION" --key-names "$SSH_KEY_NAME" >/dev/null 2>&1; then
+    KEYFILE="$HOME/.ssh/${SSH_KEY_NAME}.pem"
+    mkdir -p "$HOME/.ssh"
+    (umask 077; aws ec2 create-key-pair --region "$AWS_REGION" --key-name "$SSH_KEY_NAME" \
+      --query KeyMaterial --output text > "$KEYFILE")
+    chmod 600 "$KEYFILE"
+    cat <<WARN
+
+    ****************************************************************
+    CREATED A NEW SSH KEY PAIR: $KEYFILE
+
+    BACK THIS FILE UP NOW, somewhere outside this working directory.
+    AWS does not store the private half — if you lose it you cannot
+    SSH to the instance again, and it cannot be re-downloaded.
+    ****************************************************************
+
+WARN
+  fi
   AMI="$(aws ssm get-parameters --region "$AWS_REGION" \
     --names /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
     --query 'Parameters[0].Value' --output text)"
