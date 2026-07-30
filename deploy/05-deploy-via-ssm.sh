@@ -131,6 +131,13 @@ aws ssm get-parameter --region "$REGION" --name "$PREFIX/env.migration" --with-d
   --query Parameter.Value --output text > /opt/bk/.env.migration
 chmod 600 /opt/bk/.env.migration
 
+# docker-compose.yml interpolates ${ECR_IMAGE} and ${API_DOMAIN}. Compose reads
+# those from ./.env automatically, but not from .env.deploy, so a bare
+# `docker compose logs` typed while debugging resolves both to empty strings and
+# dies with "service api has neither an image nor a build context". Give compose
+# the .env it looks for. Contains resource IDs only — no secrets.
+cp /opt/bk/.env.deploy /opt/bk/.env
+
 # ─── run ───
 cd /opt/bk
 set -a; . ./.env.deploy; set +a
@@ -150,12 +157,21 @@ REMOTE="${REMOTE//__REF__/$GIT_REF}"
 REMOTE="${REMOTE//__PREFIX__/$PREFIX}"
 
 echo "  repo $GIT_REPO @ $GIT_REF"
+# get-command-invocation truncates to 2500 characters, which on a failed
+# `docker build` is all apt output and none of the actual error. Name the log
+# group explicitly — leaving CloudWatchOutputEnabled on its own did not create
+# one — so the full transcript is always recoverable:
+#   aws logs tail /aws/ssm/bk-ingest-deploy --region <region>
+LOG_GROUP=/aws/ssm/bk-ingest-deploy
+aws logs create-log-group --region "$AWS_REGION" --log-group-name "$LOG_GROUP" 2>/dev/null || true
+aws logs put-retention-policy --region "$AWS_REGION" --log-group-name "$LOG_GROUP" \
+  --retention-in-days 14 2>/dev/null || true
 CMD_ID="$(aws ssm send-command --region "$AWS_REGION" \
   --instance-ids "$EC2_INSTANCE_ID" \
   --document-name AWS-RunShellScript \
   --comment "BK-Ingest build+deploy" \
   --timeout-seconds 3600 \
-  --cloud-watch-output-config CloudWatchOutputEnabled=true \
+  --cloud-watch-output-config "CloudWatchOutputEnabled=true,CloudWatchLogGroupName=$LOG_GROUP" \
   --parameters "$(python3 -c 'import json,sys;print(json.dumps({"commands":[sys.stdin.read()],"executionTimeout":["3600"]}))' <<<"$REMOTE")" \
   --query 'Command.CommandId' --output text)"
 echo "  command $CMD_ID"
