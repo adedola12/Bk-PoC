@@ -1,0 +1,30 @@
+# Reference unit for the BK-Ingest API — install at /etc/systemd/system/bk-ingest-api.service.
+# 05-deploy-via-ssm.sh writes EnvironmentFile and restarts this unit; the paths and the unit
+# name here must match SERVICE_NAME / REMOTE_ENV_FILE in deploy/deploy.env.
+#
+#   sudo install -m 0644 bk-ingest-api.service.example /etc/systemd/system/bk-ingest-api.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now bk-ingest-api
+
+[Unit]
+Description=BK-Ingest API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bkingest
+Group=bkingest
+WorkingDirectory=/opt/bk-ingest/server
+# Read as root by PID 1 before privileges are dropped, so 0600 root:root is fine.
+EnvironmentFile=/etc/bk-ingest/api.env
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+RestartSec=3
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

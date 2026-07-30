@@ -50,6 +50,9 @@ npm run probe               # Milestone A vision cost/latency probe (HD_BOOKET s
 
 - **client → Vercel** (`client/` as project root, `VITE_API_BASE` = Render URL)
 - **server → Render** (`server/` as root dir; env vars in dashboard; see `render.yaml`)
+- **server → EC2 via SSM** (config in SSM Parameter Store; `deploy/write-env-migration.sh`
+  migrates the env, `deploy/05-deploy-via-ssm.sh` restages it and restarts the API —
+  see `deploy/README.md`)
 
 ## Milestone status
 

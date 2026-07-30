@@ -5,3 +5,4 @@ uploads/
 dist/
 *.local
 .DS_Store
+deploy/deploy.env
