@@ -3,6 +3,10 @@
 Migration off Render. Frontend to **S3 + CloudFront**, API to **EC2 + Docker**,
 database **untouched on MongoDB Atlas**.
 
+> **Current state: [`STATUS.md`](STATUS.md).** The stack is provisioned and the
+> API is healthy; one DNS record is outstanding. Check it yourself any time with
+> `./deploy/06-verify-live.sh` (read-only).
+
 ```
 Browser ──HTTPS──> CloudFront ──> S3 (static React build)
    │
@@ -197,10 +201,26 @@ ssh ec2-user@<ip> 'cd /opt/bk && ./update.sh'          # API: pull + restart
 ## Verification after cutover
 
 ```bash
-curl https://api.<domain>/healthz          # {"ok":true,"db":true}
-curl https://api.<domain>/api/triage       # JSON array
-curl https://api.<domain>/api/reports/latest
+./deploy/06-verify-live.sh
 ```
+
+Read-only and idempotent — run it before a demo, or any time you want to know
+whether the stack is actually up. It checks DNS, certificate trust, `/healthz`
+and the API routes, CORS, the frontend and its SPA fallback, and exits non-zero
+if anything is wrong.
+
+Two of those are not covered by the `go-live.sh` verify step, and both fail
+silently in ways that look fine from the terminal:
+
+- **CORS.** `curl` sends no `Origin` header, so a wrong `CORS_ORIGINS` passes
+  every plain-`curl` check and then breaks every page in the browser. This sends
+  a real preflight from the CloudFront origin, and separately confirms an
+  unknown origin is still refused — a config that echoes back any origin would
+  otherwise pass as "working".
+- **Bundle drift.** `VITE_API_BASE` is inlined at **build** time. Change
+  `API_DOMAIN` and redeploy without rebuilding the client, and every check goes
+  green while the app calls a host that no longer exists. This reads the API
+  base back out of the published bundle.
 
 Then in the browser: load the CloudFront URL, **refresh on a nested route**
 (proves SPA fallback), upload a fixture, run extraction, download an emission.
