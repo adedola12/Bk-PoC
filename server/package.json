@@ -9,6 +9,7 @@
     "seed": "node taxonomy/seed.js",
     "eval": "node eval/run.js",
     "probe": "node scripts/probe_vision.mjs",
+    "verify:media": "node scripts/verify_media.mjs",
     "test": "vitest run"
   },
   "dependencies": {
