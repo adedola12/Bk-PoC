@@ -86,5 +86,9 @@ export ANTHROPIC_API_KEY=...
   nothing to warm up beforehand.
 - Deploys are an explicit script run, not auto-deploy from `main`.
 - Render (`bk-poc-1.onrender.com`) and Vercel (`bk-po-c.vercel.app`) are both
-  retired. `bk-po-c.vercel.app` remains in `CORS_ORIGINS` deliberately, so the
-  old frontend keeps working as a fallback if one is ever needed.
+  retired. **Neither is a usable fallback.** `bk-po-c.vercel.app` still serves
+  (HTTP 200), which makes it look like one, but its production bundle
+  (`index-B3shi2eG.js`) was built on 29-Jul, before the migration, so it calls
+  the Render API — and that account is suspended. Demo from the CloudFront URL
+  only. The Vercel origin is left in `CORS_ORIGINS` because removing it buys
+  nothing and would need an API restart.
