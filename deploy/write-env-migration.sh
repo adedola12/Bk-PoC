@@ -15,12 +15,26 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$ROOT/deploy/.env.migration"
 
-REQUIRED=(MONGODB_URI ANTHROPIC_API_KEY)
+# ANTHROPIC_API_KEY is required unless you explicitly opt out with
+# DEPLOY_WITHOUT_AI_KEY=1. Opting out is a supported state, not a fudge: with no
+# key every AI call fails closed and uploads route to human triage, which is the
+# documented degradation (docs/HANDOFF_PROMPT.md §2). Everything that does not
+# call Anthropic — intake, the registries, review queues, price ledger, template
+# emission, the whole UI — is unaffected. The key can be added later by updating
+# the SSM parameter and restarting; no image rebuild.
+REQUIRED=(MONGODB_URI)
+[ "${DEPLOY_WITHOUT_AI_KEY:-0}" = "1" ] || REQUIRED+=(ANTHROPIC_API_KEY)
 OPTIONAL=(
   CLOUDINARY_CLOUD_NAME CLOUDINARY_API_KEY CLOUDINARY_API_SECRET
   CLOUDINARY_FOLDER CLOUDINARY_UNSIGNED_PRESET CLOUDINARY_AVATAR_FOLDER
   ADLM_AI_URL ADLM_AI_TOKEN CORS_ORIGINS
 )
+# Written when present, whether or not it was demanded above — opting out of the
+# check must not discard a key that happens to be set. Spelled as an `if` and
+# not `[ … ] && …`, which under `set -e` exits the script when the test is false.
+if [ "${DEPLOY_WITHOUT_AI_KEY:-0}" = "1" ]; then
+  OPTIONAL+=(ANTHROPIC_API_KEY)
+fi
 
 MISSING=0
 for v in "${REQUIRED[@]}"; do
