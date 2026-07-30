@@ -10,6 +10,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 step() { printf '\n\033[1;36m━━━ %s ━━━\033[0m\n' "$1"; }
 
+# If the secrets file is absent but the secrets are in the environment, generate
+# it. Lets you supply secrets via environment configuration instead of pasting
+# them anywhere they could be committed or transcribed.
+if [ ! -f "$ROOT/deploy/.env.migration" ] && [ -n "${MONGODB_URI:-}" ]; then
+  step "0/6  generating .env.migration from environment"
+  "$ROOT/deploy/write-env-migration.sh"
+fi
+
 step "1/6  pre-flight"
 "$ROOT/deploy/00-preflight.sh"
 

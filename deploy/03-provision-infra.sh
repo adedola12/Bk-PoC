@@ -127,6 +127,41 @@ fi
 aws ec2 associate-address --region "$AWS_REGION" --instance-id "$INSTANCE_ID" --allocation-id "$ALLOC" >/dev/null
 setconf ELASTIC_IP "$EIP"
 
+# ───────────────── DNS (Route 53, if the zone lives there) ─────────────────
+# If API_DOMAIN's parent zone is hosted in this account's Route 53, create the
+# A record automatically. Otherwise print what to add at whichever DNS provider
+# holds the zone. TTL 60 keeps rollback fast.
+say "DNS A record for $API_DOMAIN"
+DNS_DONE=no
+ZONE_ID=""
+# Walk up the labels: api-bk.adlm.com -> adlm.com -> com, first match wins.
+probe="$API_DOMAIN"
+while [ "$(echo "$probe" | tr -cd '.' | wc -c)" -ge 1 ]; do
+  ZONE_ID="$(aws route53 list-hosted-zones-by-name --dns-name "$probe" \
+    --query "HostedZones[?Name=='${probe}.'].Id | [0]" --output text 2>/dev/null || echo None)"
+  [ "$ZONE_ID" != "None" ] && [ -n "$ZONE_ID" ] && break
+  probe="${probe#*.}"
+  ZONE_ID=""
+done
+
+if [ -n "$ZONE_ID" ] && [ "$ZONE_ID" != "None" ]; then
+  ZONE_ID="${ZONE_ID##*/}"
+  CHANGE_ID="$(aws route53 change-resource-record-sets --hosted-zone-id "$ZONE_ID" \
+    --change-batch "$(cat <<JSON
+{"Comment":"BK-Ingest PoC API","Changes":[{"Action":"UPSERT","ResourceRecordSet":{
+  "Name":"${API_DOMAIN}","Type":"A","TTL":60,"ResourceRecords":[{"Value":"${EIP}"}]}}]}
+JSON
+)" --query 'ChangeInfo.Id' --output text)"
+  echo "    Route 53 zone $ZONE_ID — A record UPSERTed to $EIP (TTL 60)"
+  echo "    waiting for the change to propagate…"
+  aws route53 wait resource-record-sets-changed --id "$CHANGE_ID" 2>/dev/null || true
+  DNS_DONE=yes
+else
+  echo "    $API_DOMAIN is not in this account's Route 53 — create the record manually:"
+  echo "        type A   name ${API_DOMAIN}   value ${EIP}   TTL 60"
+fi
+setconf DNS_AUTOMANAGED "$DNS_DONE"
+
 # ────────────────────────── S3 ──────────────────────────
 say "S3 bucket (private; CloudFront reaches it via OAC)"
 if ! aws s3api head-bucket --bucket "$FRONTEND_BUCKET" 2>/dev/null; then
