@@ -22,7 +22,7 @@ of record; I ratify decisions. Evaluation day with the client is **31-Jul-2026**
   (100% post-Stage-5) — final only after my ground-truth verification.
 - 57/57 Vitest tests green (`cd server && npx vitest run`); client builds clean.
 - Deployed on AWS (`eu-west-1`, account `065634457992`) since 30-Jul-2026, after the Render
-  account was suspended for non-payment: client `https://d3kbhx0i6234ut.cloudfront.net`
+  account was suspended for non-payment: client `https://bk.adlmstudio.com`
   (S3 + CloudFront, `VITE_API_BASE` inlined at build time), API
   `https://api-bk.adlmstudio.com` (Docker on EC2 `t3.small`, Caddy terminating TLS; secrets in
   SSM Parameter Store; CORS normalizes origins). Atlas untouched by the migration. Deploy with
@@ -53,7 +53,8 @@ of record; I ratify decisions. Evaluation day with the client is **31-Jul-2026**
    (e) T9/T10 labelled "supplementary — non-ratified", separate eval section; code freeze on
    everything else after 28-Jul. Log as D20 when starting. Gate each F-milestone with me.
 3. **Demo rehearsal**: full arc on the deployed stack (script in `docs/BUILD_REPORT.md` §7);
-   warm Render ~2 min before; quote T7 from local hardware.
+   no warm-up needed — the EC2 container runs continuously, unlike the Render free tier that
+   slept; quote T7 from local hardware.
 4. **Backlog if time allows**: D19 re-upload identity dedupe (same file re-processed should
    delta-update via Upload Ledger, not duplicate rows).
 

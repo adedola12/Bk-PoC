@@ -130,6 +130,36 @@ what makes client-side routing survive a refresh. This replaces the
 `client/vercel.json` rewrite; that file can stay, it is inert outside Vercel.
 `go-live.sh` verifies it by requesting `/products` directly and asserting 200.
 
+### Frontend custom domain
+
+`03-provision-infra.sh` leaves the frontend on the distribution's own
+`*.cloudfront.net` name. To put it on `FRONTEND_DOMAIN`:
+
+```bash
+./deploy/06-frontend-custom-domain.sh
+```
+
+Idempotent, and it runs in two passes because certificate validation needs DNS
+that this account may not control. First pass requests an ACM certificate and
+prints the validation CNAME; create that record, then re-run and it attaches
+the certificate and the alias to the distribution.
+
+The certificate is issued in **us-east-1** whatever `AWS_REGION` says —
+CloudFront reads certificates from that region only, and a certificate in the
+distribution's own region is silently invisible to it.
+
+Two records total at the DNS provider:
+
+```
+CNAME  _<validation>.bk.<domain>   ->  _<value>.acm-validations.aws.
+CNAME  bk.<domain>                 ->  <distribution>.cloudfront.net
+```
+
+Adding the alias does **not** update CORS. Add `https://<FRONTEND_DOMAIN>` to
+`CORS_ORIGINS` and restart the API, or every call from the new origin is
+blocked by the browser while the old origin keeps working — which reads as "the
+custom domain is broken" rather than as a CORS problem.
+
 ### Close the CORS loop
 
 `VITE_API_BASE` is inlined at **build** time, so the frontend must be rebuilt
