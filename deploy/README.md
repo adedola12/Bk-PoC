@@ -64,69 +64,73 @@ Nothing below runs until this checklist is complete.
 
 ---
 
-## First-time AWS setup
+## Going live
 
-### 1. API host — EC2
-
-1. Launch **Amazon Linux 2023**, `t3.small` (2GB RAM; `t3.micro` at 1GB is tight
-   for pdfjs rasterizing a 104-page PDF and will OOM under vision extraction).
-2. Paste `deploy/ec2-user-data.sh` into **User data**.
-3. **Security group**: inbound `80` and `443` from `0.0.0.0/0`, `22` from your IP only.
-4. Allocate an **Elastic IP** and associate it. Without one the address changes
-   on stop/start and TLS breaks.
-5. **IAM instance role** with `AmazonEC2ContainerRegistryReadOnly` so the box can
-   pull from ECR without stored credentials.
-6. **DNS**: create an A record `api.<your-domain>` → the Elastic IP. Caddy cannot
-   issue a certificate for a bare IP, so this is required, not optional.
-
-### 2. Push the image
+The whole deployment is scripted. Four things must be true first — three you
+provide, one AWS cannot infer for you.
 
 ```bash
-cp deploy/env.deploy.example deploy/.env.deploy   # fill in AWS_REGION, ECR_REPO, API_DOMAIN
-./deploy/01-build-and-push.sh
+# 1. deployment config
+cp deploy/env.deploy.example deploy/.env.deploy
+$EDITOR deploy/.env.deploy          # AWS_REGION, ECR_REPO, API_DOMAIN,
+                                    # FRONTEND_BUCKET, SSH_KEY_NAME
+
+# 2. application secrets captured from Render (Phase 2 above)
+$EDITOR deploy/.env.migration       # MONGODB_URI, ANTHROPIC_API_KEY, Cloudinary…
+
+# 3. an EC2 key pair, if you do not already have one
+aws ec2 create-key-pair --key-name bk-ingest --query KeyMaterial \
+  --output text > ~/.ssh/bk-ingest.pem && chmod 600 ~/.ssh/bk-ingest.pem
+
+# 4. check everything before spending money — read-only, creates nothing
+./deploy/00-preflight.sh
 ```
 
-Then set `ECR_IMAGE` in `deploy/.env.deploy` to the value the script prints.
-
-### 3. Start the API
+Then provision. This creates ECR, the instance role, security group, EC2 box,
+Elastic IP, S3 bucket and CloudFront distribution, and writes every resource ID
+back into `deploy/.env.deploy`:
 
 ```bash
-scp deploy/docker-compose.yml deploy/Caddyfile deploy/.env.deploy \
-    deploy/.env.migration ec2-user@<elastic-ip>:/opt/bk/
-ssh ec2-user@<elastic-ip> 'cd /opt/bk && ./update.sh'
-curl https://api.<your-domain>/healthz     # expect {"ok":true,"db":true}
+./deploy/03-provision-infra.sh
 ```
 
-Certificate issuance takes ~30s on first boot. If it fails, check the A record
-has propagated and port 80 is genuinely open — the ACME HTTP-01 challenge needs it.
+It finishes by printing the Elastic IP. **Create the DNS A record now** —
+`api.<your-domain>` → that IP. This is the one manual step, and it is
+unavoidable: Caddy cannot obtain a Let's Encrypt certificate for a bare IP, and
+your CloudFront frontend is HTTPS, so a plain-HTTP API would be blocked by the
+browser as mixed content.
 
-### 4. Frontend — S3 + CloudFront
-
-1. Create a **private** S3 bucket (block all public access — CloudFront reaches it
-   via Origin Access Control, not public reads).
-2. Create a CloudFront distribution:
-   - Origin: the S3 bucket, with **Origin Access Control** (create new, sign requests)
-   - Viewer protocol policy: **Redirect HTTP to HTTPS**
-   - Default root object: `index.html`
-   - **SPA fallback — this is the step people miss.** S3 has no rewrite engine, so
-     a refresh on `/products` returns 403. Add two **custom error responses**:
-
-     | HTTP error code | Response page path | HTTP response code |
-     |---|---|---|
-     | 403 | `/index.html` | **200** |
-     | 404 | `/index.html` | **200** |
-
-     This replaces the `vercel.json` rewrite and the `_redirects` file a
-     Cloudflare deploy would have used. `client/vercel.json` can stay; it is
-     inert outside Vercel.
-3. Apply the bucket policy CloudFront shows you after creating the OAC.
-4. Put the distribution ID into `deploy/.env.deploy`, then:
+Once DNS resolves:
 
 ```bash
-./deploy/02-deploy-frontend.sh
+./deploy/go-live.sh        # pre-flight -> provision -> build/push -> deploy -> verify
 ```
 
-### 5. Close the CORS loop
+`go-live.sh` refuses to continue if DNS does not yet point at the box, rather
+than burning a Let's Encrypt rate-limit attempt and leaving you on a broken
+certificate. It is idempotent — re-run it after fixing anything.
+
+Finally, the cost guardrail:
+
+```bash
+./deploy/04-billing-alarm.sh you@example.com     # $10 CloudWatch alarm
+```
+
+Confirm the SNS subscription email, and check **Billing preferences → Receive
+Billing Alerts** is enabled — AWS does not publish the `EstimatedCharges` metric
+at all until that box is ticked, so the alarm would sit silently in
+`INSUFFICIENT_DATA` forever.
+
+### A note on SPA routing
+
+S3 has no rewrite engine, so a hard refresh on `/products` would return 403.
+`03-provision-infra.sh` configures CloudFront custom error responses mapping
+both **403 → `/index.html` (200)** and **404 → `/index.html` (200)**, which is
+what makes client-side routing survive a refresh. This replaces the
+`client/vercel.json` rewrite; that file can stay, it is inert outside Vercel.
+`go-live.sh` verifies it by requesting `/products` directly and asserting 200.
+
+### Close the CORS loop
 
 `VITE_API_BASE` is inlined at **build** time, so the frontend must be rebuilt
 whenever the API domain changes — a redeploy alone is not enough.
