@@ -159,6 +159,26 @@ setconf ELASTIC_IP "$EIP"
 say "DNS A record for $API_DOMAIN"
 DNS_DONE=no
 ZONE_ID=""
+
+# DuckDNS fallback: when no domain is registered yet, a *.duckdns.org name gets
+# a real Let's Encrypt certificate with no architecture change. duckdns.org is
+# on the Public Suffix List, so each subdomain has its own ACME rate-limit
+# bucket — unlike nip.io/sslip.io, which share one global quota that is
+# frequently exhausted and would fail certificate issuance unpredictably.
+if [[ "$API_DOMAIN" == *.duckdns.org ]]; then
+  : "${DUCKDNS_TOKEN:?API_DOMAIN is a duckdns.org name — set DUCKDNS_TOKEN in deploy/.env.deploy}"
+  SUB="${API_DOMAIN%.duckdns.org}"
+  RESP="$(curl -fsS "https://www.duckdns.org/update?domains=${SUB}&token=${DUCKDNS_TOKEN}&ip=${EIP}" || echo FAIL)"
+  if [ "$RESP" = "OK" ]; then
+    echo "    DuckDNS updated: ${API_DOMAIN} -> ${EIP}"
+    DNS_DONE=yes
+  else
+    echo "    !! DuckDNS update returned '${RESP}' — check the token and subdomain"
+  fi
+  setconf DNS_AUTOMANAGED "$DNS_DONE"
+fi
+
+if [ "$DNS_DONE" = "no" ]; then
 # Walk up the labels: api-bk.adlm.com -> adlm.com -> com, first match wins.
 probe="$API_DOMAIN"
 while [ "$(echo "$probe" | tr -cd '.' | wc -c)" -ge 1 ]; do
@@ -186,6 +206,7 @@ else
   echo "        type A   name ${API_DOMAIN}   value ${EIP}   TTL 60"
 fi
 setconf DNS_AUTOMANAGED "$DNS_DONE"
+fi   # end: DNS_DONE was still "no" after the DuckDNS branch
 
 # ────────────────────────── S3 ──────────────────────────
 say "S3 bucket (private; CloudFront reaches it via OAC)"
