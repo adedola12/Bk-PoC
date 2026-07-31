@@ -1,0 +1,39 @@
+# Server test suite. The suite is deliberately offline — no test reads
+# process.env or touches Mongo — so this needs no secrets. Keep it that way:
+# a test that needs a key belongs behind `npm run eval`, not here.
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push supersedes an in-flight run on the same ref.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - run: npm ci
+
+      # Fixtures live at the repo root and are read-only (§6.6); vitest writes
+      # its artifacts under runs/, which is gitignored and fine to leave behind.
+      - run: npm test
