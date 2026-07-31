@@ -49,7 +49,10 @@ console.log(`Fixture: ${path.basename(fixture)}`);
 function diagnose(err) {
   if (err.http_code === 401) return "credentials rejected by Cloudinary — check API key/secret.";
   if ((err.http_code === 403 || err.http_code === 407) && process.env.HTTPS_PROXY)
-    return `possible egress-policy denial rather than a Cloudinary error — check ${process.env.HTTPS_PROXY}/__agentproxy/status and allow api.cloudinary.com + res.cloudinary.com.`;
+    return [
+      "possible egress-policy denial rather than a Cloudinary error — allow api.cloudinary.com + res.cloudinary.com.",
+      `   (from inside this container only: curl -sS ${process.env.HTTPS_PROXY}/__agentproxy/status — that address is not reachable from your own machine.)`,
+    ].join("\n");
   if (err.code === "ETIMEDOUT" || err.code === "ENOTFOUND") return "network unreachable — api.cloudinary.com is blocked or DNS is failing.";
   return "see the error above.";
 }
