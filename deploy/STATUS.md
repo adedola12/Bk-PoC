@@ -110,6 +110,19 @@ export ANTHROPIC_API_KEY=...
 
 Nothing else needs redeploying.
 
+**The migrated ledger rows have no files behind them.** Only the Mongo documents
+came across from Render; the artifacts sat on Render's ephemeral disk and on a
+dev machine, and neither is reachable. 8 of the 9 upload rows therefore name a
+file that is not on this deployment.
+
+They no longer fail with a raw `ENOENT` naming a Render path — the extract route
+answers `409 source_file_missing` and says to re-upload — but they cannot be
+extracted as they stand. **Re-upload any file you intend to demo.** A re-uploaded
+file lands in the runs volume and works normally.
+
+The runs volume is ephemeral by design (it was on Render too), so treat uploads
+as demo-session state, not as stored records.
+
 ## Running the deploy scripts from a fresh machine
 
 `deploy/.env.deploy` and `deploy/.env.migration` are gitignored, so a fresh clone
