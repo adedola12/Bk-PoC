@@ -11,7 +11,7 @@ import { resolveIprBrand } from "../stages/stage5_brand.js";
 import { expandVariants } from "../stages/stage6_variants.js";
 import { resolveTaxonomyIds } from "../services/ids.js";
 import { TodoItem } from "../models/TodoItem.js";
-import { createRun } from "../services/runs.js";
+import { createRun, resolveRunPath } from "../services/runs.js";
 import { bulkExtract } from "../stages/bulk_extract.js";
 import { detectAnomalies } from "../eval/injector.js";
 
@@ -33,19 +33,35 @@ router.post("/:uploadId/extract", async (req, res, next) => {
       });
     }
 
+    // The ledger row can outlive its file: rows migrated from Render or from a
+    // dev machine name a path that does not exist on this deployment, and the
+    // runs volume is deliberately ephemeral. Say so plainly instead of letting
+    // an ENOENT surface as a 500 with a foreign absolute path in the message.
+    const sourcePath = resolveRunPath(upload.storedPath);
+    if (!sourcePath) {
+      return res.status(409).json({
+        error:
+          `The source file for "${upload.originalName}" is not on this deployment, ` +
+          `so it cannot be extracted. This row was created on a different machine ` +
+          `and only its metadata was migrated. Re-upload the file to extract it.`,
+        code: "source_file_missing",
+        originalName: upload.originalName,
+      });
+    }
+
     const run = createRun("extract");
     const started = Date.now();
 
     let rawIprs;
     let bulkStats = null;
-    const isHtml = /\.html?$/i.test(upload.storedPath);
+    const isHtml = /\.html?$/i.test(sourcePath);
     if (label === "catalogue" && !isHtml) {
       // hostile PDF path: pairing QA routes pages to text chunks or vision panels
-      const bulk = await bulkExtract(upload.storedPath, upload.originalName, { log: run.log });
+      const bulk = await bulkExtract(sourcePath, upload.originalName, { log: run.log });
       rawIprs = bulk.iprs;
       bulkStats = { ...bulk.stats, qa: bulk.qa.pages };
     } else {
-      const ingested = await ingestFile(upload.storedPath);
+      const ingested = await ingestFile(sourcePath);
       rawIprs = await extractIprs(ingested, upload.originalName, { log: run.log });
     }
     const normalized = rawIprs.map((ipr) => (ipr.templateRow ? ipr : normalizeIpr(ipr)));

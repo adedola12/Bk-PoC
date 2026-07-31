@@ -1,5 +1,5 @@
 import express from "express";
-import fs from "node:fs";
+import { resolveRunPath } from "../services/runs.js";
 import { UploadLedger } from "../models/UploadLedger.js";
 import { TRIAGE_LABELS } from "../stages/stage0_triage.js";
 import { parseVendorDocument } from "../stages/vendor_parse.js";
@@ -22,10 +22,11 @@ router.get("/", async (req, res, next) => {
 router.get("/:id/preview", async (req, res, next) => {
   try {
     const item = await UploadLedger.findById(req.params.id).lean();
-    if (!item?.previewPath || !fs.existsSync(item.previewPath)) {
+    const preview = resolveRunPath(item?.previewPath);
+    if (!preview) {
       return res.status(404).json({ error: "No preview available" });
     }
-    res.sendFile(item.previewPath);
+    res.sendFile(preview);
   } catch (err) {
     next(err);
   }
