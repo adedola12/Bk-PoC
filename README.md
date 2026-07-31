@@ -48,8 +48,14 @@ npm run probe               # Milestone A vision cost/latency probe (HD_BOOKET s
 
 ## Deploy
 
-- **client → Vercel** (`client/` as project root, `VITE_API_BASE` = Render URL)
-- **server → Render** (`server/` as root dir; env vars in dashboard; see `render.yaml`)
+AWS, deployed by explicit script run rather than auto-deploy — see `deploy/README.md`
+for the runbook and `deploy/STATUS.md` for the live state.
+
+- **client → S3 + CloudFront** at https://bk.adlmstudio.com (`VITE_API_BASE` = the API URL below)
+- **server → EC2 + Docker** at https://api-bk.adlmstudio.com (Caddy terminates TLS; env from SSM)
+
+Render and Vercel are retired. Neither is a usable fallback — `bk-po-c.vercel.app`
+still answers, but its bundle predates the migration and calls a suspended service.
 
 ## Milestone status
 

@@ -43,22 +43,25 @@ Built and exercised locally against a real MongoDB:
 
 ## Phase 2 — Capture from Render before you touch anything
 
-Do this first. Render is suspended, not deleted; you can still read the dashboard.
+**Historical — this phase is complete.** It is kept as the record of where the
+running configuration came from. `render.yaml` has since been removed from the
+repo, so the values it held are reproduced inline below rather than looked up.
 
-- [ ] **Environment variables** — for `bk-ingest-api`, copy every value from
-      Dashboard → Service → Environment. Expected set (from `render.yaml` and a
-      code audit): `MONGODB_URI`, `ANTHROPIC_API_KEY`, `CLOUDINARY_CLOUD_NAME`,
-      `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `CORS_ORIGINS`, `NODE_ENV`.
+- [x] **Environment variables** — for `bk-ingest-api`, copy every value from
+      Dashboard → Service → Environment. Expected set (from the former
+      `render.yaml` and a code audit): `MONGODB_URI`, `ANTHROPIC_API_KEY`,
+      `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`,
+      `CORS_ORIGINS`, `NODE_ENV`.
       **Also check for `CLOUDINARY_FOLDER`** — the code reads it
-      (`server/services/cloudinary.js:26`) but it is absent from `render.yaml`
+      (`server/services/cloudinary.js:26`) but it was absent from `render.yaml`
       and `.env.example`, so it may have been set only in the dashboard.
 - [ ] Paste them into `deploy/.env.migration` locally. **Confirm it is ignored**:
       `git check-ignore -v deploy/.env.migration` must print a match. It already
       does — `.env.migration` was added to `.gitignore`.
 - [ ] **Persistent disk** — the free plan has none, and `runs/` was ephemeral, so
       there is most likely nothing to download. Confirm in the dashboard anyway.
-- [ ] **Service configuration** — record build command, start command, health
-      check path, region. Current values from `render.yaml`: `npm install`,
+- [x] **Service configuration** — record build command, start command, health
+      check path, region. Values from the former `render.yaml`: `npm install`,
       `npm start`, `/healthz`, root dir `server`.
 - [ ] **List every other service on the account** so you know the full exposure.
       Nothing else from this repo deploys there, but the account may host
@@ -231,15 +234,17 @@ Then in the browser: load the CloudFront URL, **refresh on a nested route**
 
 ## Rollback
 
-The Render service still exists, suspended. Rollback is DNS:
+**There is no longer a rollback target.** Render is retired and its account
+suspended, and the Vercel bundle predates the migration — it still answers, which
+makes it look like a fallback, but it calls the suspended Render API. Rolling
+back means reinstating a paid Render service and rebuilding the frontend against
+it, which is recovery work, not a switch to flip.
 
-1. Repoint `api.<domain>` back, or rebuild the frontend with
-   `VITE_API_BASE=https://bk-poc-1.onrender.com` and redeploy.
-2. Reinstate the Render service (requires settling the account).
-
-Roll back if: `/healthz` fails after 10 minutes of debugging, TLS will not issue,
-or extraction fails on a fixture that worked on Render. **Lower DNS TTL to 60s at
-least an hour before cutover** so this is fast.
+Recover forward instead. The stack is reproducible from this directory:
+`03-provision-infra.sh` for the box and DNS, `05-deploy-via-ssm.sh` to redeploy
+the containers, `06-verify-live.sh` to confirm. Roll *forward* if `/healthz`
+fails after 10 minutes of debugging, TLS will not issue, or extraction fails on a
+fixture that previously worked. **Keep DNS TTL at 60s** so any repoint is fast.
 
 ## Cost
 
