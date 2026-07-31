@@ -81,4 +81,54 @@ router.get("/latest", (req, res, next) => {
   }
 });
 
+/* ─── GET /api/reports/:runId/log — the run's log.jsonl ───
+   Render gives no shell on the free plan, so this is the only way to read run
+   detail (per-call AI cost/latency, cloudinary_failed, crawl progress) on a
+   deployment. ?kind= filters by event kind (comma-separated), ?limit= returns
+   the last N matching entries (newest-biased; default 500, max 5000). */
+const RUN_ID = /^[0-9TZ:.-]+_[a-z-]+$/i; // createRun(): <ISO stamp>_<label>
+
+router.get("/:runId/log", (req, res, next) => {
+  try {
+    const { runId } = req.params;
+    if (!RUN_ID.test(runId)) return res.status(400).json({ error: "Invalid runId" });
+
+    // Belt-and-braces against traversal: the resolved dir must sit under runs/.
+    const root = runsRoot();
+    const dir = path.resolve(root, runId);
+    if (dir !== path.join(root, runId) || !fs.existsSync(dir)) {
+      return res.status(404).json({ error: `Unknown run: ${runId}` });
+    }
+
+    const logPath = path.join(dir, "log.jsonl");
+    if (!fs.existsSync(logPath)) return res.json({ runId, total: 0, returned: 0, entries: [] });
+
+    const lines = fs.readFileSync(logPath, "utf8").split("\n").filter(Boolean);
+    const kinds = req.query.kind ? new Set(String(req.query.kind).split(",").map((k) => k.trim())) : null;
+    const limit = Math.min(Number(req.query.limit) || 500, 5000);
+
+    // A truncated final line (run still writing) shouldn't fail the whole read.
+    const entries = [];
+    let malformed = 0;
+    for (const line of lines) {
+      try {
+        const entry = JSON.parse(line);
+        if (!kinds || kinds.has(entry.kind)) entries.push(entry);
+      } catch {
+        malformed++;
+      }
+    }
+
+    res.json({
+      runId,
+      total: entries.length,
+      returned: Math.min(entries.length, limit),
+      ...(malformed ? { malformed } : {}),
+      entries: entries.slice(-limit),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
