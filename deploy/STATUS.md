@@ -146,11 +146,17 @@ tool for a pre-demo check.
   nothing to warm up beforehand.
 - Deploys are an explicit script run, not auto-deploy from `main`.
 - Render (`bk-poc-1.onrender.com`) and Vercel (`bk-po-c.vercel.app`) are both
-  retired. **Neither is a usable fallback.** `bk-po-c.vercel.app` still serves
-  (HTTP 200), which makes it look like one, but its production bundle
-  (`index-B3shi2eG.js`) was built on 29-Jul, before the migration, so it calls
-  the Render API — and that account is suspended. Demo from
-  `https://bk.adlmstudio.com` only.
+  retired. **Neither is a usable fallback.**
+- `bk-po-c.vercel.app` now **307-redirects to `https://bk.adlmstudio.com`** on
+  every path. Until 31-Jul it served its 29-Jul bundle (`index-B3shi2eG.js`),
+  built before the migration, so it called the suspended Render API and every
+  request died on CORS — while returning HTTP 200, which made it look like a
+  working fallback. The redirect removes that trap.
+- **Caveat on that redirect:** the Vercel project is still Git-linked to `main`,
+  and deploying the redirect changed its build settings. A push to `main` would
+  trigger a rebuild that replaces the redirect with a broken page. To make the
+  retirement durable, disconnect the project's Git integration or delete the
+  project.
 - `CORS_ORIGINS` on the box is `https://bk.adlmstudio.com,https://d3kbhx0i6234ut.cloudfront.net`.
   An earlier revision of this file claimed the Vercel origin was in that list; it
   is not, and has not been since the custom-domain work. It would still be
