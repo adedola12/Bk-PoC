@@ -2,7 +2,8 @@ import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// .env lives at the repo root locally; on Render, env vars come from the dashboard
+// .env lives at the repo root locally; on EC2 the container's env comes from SSM
+// Parameter Store (see deploy/05-deploy-via-ssm.sh)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
@@ -27,7 +28,7 @@ await ensureBrandsSeeded().catch((err) => console.error("brand seed failed:", er
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
-app.use(requestLog()); // one line per request — Render's only view into a live deploy
+app.use(requestLog()); // one line per request — see what the deploy is actually doing
 app.use(express.json({ limit: "2mb" }));
 
 /* CORS — env-extendable allowlist merged with local dev origins (ADLM pattern).

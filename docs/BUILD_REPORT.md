@@ -3,7 +3,7 @@
 **Project:** AI-Powered Catalog Onboarding — Proof of Concept
 **Client:** BuildersKonnect (BK) · **Engineer of record:** Adedolapo Quasim, ADLM Studio
 **Build window:** 17–18 July 2026 (materials received 17-Jul; all five milestones complete 18-Jul; evaluation target 31-Jul-2026)
-**Repository:** github.com/adedola12/Bk-PoC · **Live:** client https://bk-po-c.vercel.app · API https://bk-poc-1.onrender.com
+**Repository:** github.com/adedola12/Bk-PoC · **Live:** client https://d3kbhx0i6234ut.cloudfront.net · API https://api-bk.adlmstudio.com
 
 ---
 
@@ -115,8 +115,10 @@ Every number is reproducible: `cd server && npm run eval` writes a timestamped s
 - **Media:** Cloudinary (uploads + delivery URLs into template media columns).
 - **Excel:** exceljs (template-driven read/write). **PDF:** pdfjs-dist text + positions;
   pdf-to-img rasterization; sharp panel slicing. **Word:** mammoth.
-- **Deploy:** client → Vercel; API → Render (free tier, `render.yaml` blueprint); auto-deploy
-  from GitHub `main`.
+- **Deploy:** client → S3 + CloudFront; API → Docker on EC2 (`t3.small`, Caddy terminating TLS)
+  in `eu-west-1`, image in ECR; `deploy/` holds the scripted runbook. Migrated off
+  Vercel + Render on 30-Jul-2026 when the Render account was suspended for non-payment;
+  Atlas was not touched.
 - **Artifacts:** every pipeline invocation writes to `runs/<timestamp>/` (logs, previews,
   scorecards, emitted xlsx); `fixtures/` is read-only.
 
@@ -157,9 +159,11 @@ Open: D19 — cross-file/re-upload SKU reconciliation.
 
 ## 8. Evaluation-day runbook (31-Jul-2026)
 
-1. Top up Anthropic credits; confirm key on Render. 2. Verify ground truth, flip statuses to
+1. Top up Anthropic credits; set `ANTHROPIC_API_KEY` in the `/bk-ingest/deploy/env.migration`
+SSM parameter and recreate the `api` container. 2. Verify ground truth, flip statuses to
 `human_verified`. 3. `npm run eval -- --full` for the final scorecard incl. full-handbook T7.
-4. Warm the Render instance ~2 min before demo (free tier sleeps). 5. Demo arc: upload mixed
+4. No warm-up needed — the EC2 container runs continuously, unlike the Render free tier that
+slept. 5. Demo arc: upload mixed
 files → SG_BK D11 card → confirm → vendor profile · QRG forced to vision → Review Queue holding
 "2700 V" and 0601513000 · Products → Emit → download BK template file · Todo → price entry →
 Price Compare · Run Report scorecard. 6. Make T7 timing claims from local hardware, where the

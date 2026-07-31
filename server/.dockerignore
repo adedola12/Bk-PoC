@@ -1,0 +1,13 @@
+# Keep the image small and keep secrets/artifacts out of it.
+node_modules
+npm-debug.log
+.env
+.env.*
+runs/
+uploads/
+test/
+scripts/
+# NOTE: eval/ is NOT excluded — routes/pipeline.js:16 imports eval/injector.js
+# (detectAnomalies) at runtime. It is 48K; excluding it breaks container boot.
+*.md
+.DS_Store

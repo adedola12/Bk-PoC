@@ -1,7 +1,8 @@
 /**
- * Request log — Render's log is the only window into a running deploy (no
- * shell on the free plan), and without this it shows nothing but startup and
- * 5xx stacks, so a slow extraction and an idle service look identical.
+ * Request log — without it the container log shows nothing but startup and 5xx
+ * stacks, so a slow extraction and an idle service look identical. On EC2 that
+ * log is `docker compose logs -f api`; the point is that it should say what the
+ * service is actually doing, not only when it breaks.
  *
  * One line per request, emitted on finish so status and duration are real.
  * Never logs bodies, headers or query strings: uploads carry customer data and
@@ -15,8 +16,8 @@ export function requestLog({ write = console.log, slowMs = 10000 } = {}) {
   return function requestLogger(req, res, next) {
     const started = Date.now();
     res.on("finish", () => {
-      // Render probes /healthz constantly; logging the successes drowns
-      // everything else, but a failing health check is worth seeing.
+      // The Docker healthcheck hits /healthz constantly; logging the successes
+      // drowns everything else, but a failing health check is worth seeing.
       const isHealth = req.path === "/health" || req.path === "/healthz";
       if (isHealth && res.statusCode < 400) return;
       const ms = Date.now() - started;

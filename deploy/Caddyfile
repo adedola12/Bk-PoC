@@ -1,0 +1,29 @@
+# Caddy: automatic HTTPS for the BK-Ingest API.
+#
+# Caddy obtains and renews a Let's Encrypt certificate for {$API_DOMAIN}
+# automatically, provided:
+#   1. an A record for that name points at this box's Elastic IP, and
+#   2. ports 80 and 443 are open to 0.0.0.0/0 in the security group.
+
+{$API_DOMAIN} {
+	encode gzip
+
+	reverse_proxy api:8080 {
+		# Catalogue extraction runs 2 min typical, ~12 min worst case. Caddy has
+		# no reverse-proxy read timeout by default; these are set explicitly so a
+		# future Caddy default change cannot silently start cutting off the
+		# hostile-PDF vision path mid-request.
+		transport http {
+			read_timeout 20m
+			write_timeout 20m
+			dial_timeout 10s
+		}
+	}
+
+	# Health checks and access logs. Keep the log quiet on /healthz so the
+	# 30-second container healthcheck does not drown real requests.
+	log {
+		output stdout
+		format console
+	}
+}

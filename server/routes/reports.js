@@ -82,9 +82,9 @@ router.get("/latest", (req, res, next) => {
 });
 
 /* ─── GET /api/reports/:runId/log — the run's log.jsonl ───
-   Render gives no shell on the free plan, so this is the only way to read run
-   detail (per-call AI cost/latency, cloudinary_failed, crawl progress) on a
-   deployment. ?kind= filters by event kind (comma-separated), ?limit= returns
+   Reads run detail (per-call AI cost/latency, cloudinary_failed, crawl
+   progress) over HTTP, so diagnosing a deploy does not require shell access to
+   the box. ?kind= filters by event kind (comma-separated), ?limit= returns
    the last N matching entries (newest-biased; default 500, max 5000). */
 const RUN_ID = /^[0-9TZ:.-]+_[a-z-]+$/i; // createRun(): <ISO stamp>_<label>
 
