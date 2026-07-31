@@ -1,5 +1,6 @@
 import { callClaudeJSON } from "../services/anthropic.js";
 import { extractDocxText } from "../services/docx.js";
+import { resolveRunPath } from "../services/runs.js";
 import { Vendor } from "../models/Vendor.js";
 
 /**
@@ -23,7 +24,15 @@ Return JSON:
  * @param {{log?: Function}} ctx
  */
 export async function parseVendorDocument(upload, ctx = {}) {
-  const text = await extractDocxText(upload.storedPath);
+  const sourcePath = resolveRunPath(upload.storedPath);
+  if (!sourcePath) {
+    const err = new Error(
+      `The source file for "${upload.originalName}" is not on this deployment, so the vendor profile cannot be parsed. Re-upload the file.`
+    );
+    err.status = 409;
+    throw err;
+  }
+  const text = await extractDocxText(sourcePath);
   const profile = await callClaudeJSON({
     system: SYSTEM,
     messages: [{ role: "user", content: `Vendor document ${upload.originalName}:\n\n${text.slice(0, 20000)}` }],

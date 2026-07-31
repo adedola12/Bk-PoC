@@ -10,7 +10,7 @@ import { readTemplateSchema, readDataRows, emitRows } from "../emitter/index.js"
 import { mapIprToRow, pairAndUploadMedia, mediaUrlFor, identityKey } from "../stages/stage7_map.js";
 import { generateContent } from "../stages/stage8_generate.js";
 import { gateRow } from "../stages/stage9_gate.js";
-import { createRun, runsRoot } from "../services/runs.js";
+import { createRun, runsRoot, resolveRunPath } from "../services/runs.js";
 
 const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -61,9 +61,12 @@ router.post("/", async (req, res, next) => {
     const images = await UploadLedger.find({
       $or: [{ "triage.label": "product_image" }, { "triage.verifiedLabel": "product_image" }],
     }).lean();
-    const uniqueImages = [...new Map(images.map((i) => [i.originalName, i])).values()].filter((i) =>
-      fs.existsSync(i.storedPath)
-    );
+    // Resolve to absolute paths here, at the boundary, so pairing reads a path
+    // that exists on this machine — and silently drops images whose source file
+    // did not come across with the record.
+    const uniqueImages = [...new Map(images.map((i) => [i.originalName, i])).values()]
+      .map((i) => ({ ...i, storedPath: resolveRunPath(i.storedPath) }))
+      .filter((i) => i.storedPath);
     const { paired, unpaired } = await pairAndUploadMedia(uniqueImages, iprs, { log: run.log });
     for (const name of unpaired) {
       await ReviewItem.create({ runId: run.runId, reason: "unpaired_media", detail: name });

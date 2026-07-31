@@ -1,0 +1,62 @@
+# BK-Ingest on EC2: Caddy (TLS termination) -> API container.
+#
+# Why Caddy and not CloudFront or an ALB in front of the API:
+#   - The frontend is served over HTTPS from CloudFront. Browsers block an
+#     HTTPS page from calling an HTTP API (mixed content), so the API MUST
+#     have a trusted certificate. A bare EC2 IP cannot get one.
+#   - CloudFront is the wrong tool here: its origin response timeout defaults
+#     to 30s and maxes at 60s without a service quota increase. Catalogue
+#     extraction runs 2 minutes typical and ~12 minutes worst case
+#     (docs/BUILD_REPORT.md:94,99), so CloudFront in front of this API would
+#     reintroduce exactly the timeout ceiling we moved off Lambda to avoid.
+#   - Caddy terminates TLS with an automatic Let's Encrypt certificate and
+#     proxies with no request timeout, which is what a 12-minute request needs.
+#
+# Requires: an A record for ${API_DOMAIN} pointing at this box's Elastic IP.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"     # required for the ACME HTTP-01 challenge
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # certificates live here — MUST persist across restarts
+      - caddy_config:/config
+    environment:
+      - API_DOMAIN=${API_DOMAIN}
+    depends_on:
+      - api
+
+  api:
+    image: ${ECR_IMAGE}
+    restart: unless-stopped
+    expose:
+      - "8080"
+    env_file:
+      - ./.env.migration      # secrets live only on the box, never in git
+    environment:
+      - PORT=8080
+      - NODE_ENV=production
+    # runs/ is ephemeral by design, exactly as it was on Render: artifacts must
+    # survive the emit -> download round trip, not a restart. A named volume
+    # keeps them across `docker compose up -d` redeploys, which is strictly
+    # better than Render behaved.
+    volumes:
+      - api_runs:/runs
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }   # stop logs filling the disk
+
+volumes:
+  caddy_data:
+  caddy_config:
+  api_runs:

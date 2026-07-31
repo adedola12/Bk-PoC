@@ -21,10 +21,13 @@ of record; I ratify decisions. Evaluation day with the client is **31-Jul-2026**
 - Milestones A–E complete. T1/T3/T4/T5/T6/T7/T8 **PASS**; T2 = 94.7% interim
   (100% post-Stage-5) — final only after my ground-truth verification.
 - 57/57 Vitest tests green (`cd server && npx vitest run`); client builds clean.
-- Deployed: client `https://bk-po-c.vercel.app` (Vercel, `VITE_API_BASE` set), API
-  `https://bk-poc-1.onrender.com` (Render free; env vars in dashboard; CORS normalizes origins
-  and auto-allows `bk-po-c*.vercel.app` previews). Auto-deploy from GitHub `main`
-  (`adedola12/Bk-PoC`).
+- Deployed on AWS (`eu-west-1`, account `065634457992`) since 30-Jul-2026, after the Render
+  account was suspended for non-payment: client `https://d3kbhx0i6234ut.cloudfront.net`
+  (S3 + CloudFront, `VITE_API_BASE` inlined at build time), API
+  `https://api-bk.adlmstudio.com` (Docker on EC2 `t3.small`, Caddy terminating TLS; secrets in
+  SSM Parameter Store; CORS normalizes origins). Atlas untouched by the migration. Deploy with
+  `deploy/go-live.sh`, or `deploy/05-deploy-via-ssm.sh` from a machine with no SSH or Docker.
+  No longer auto-deploys on push — deployment is an explicit script run.
 - Data: Atlas `bkIngest` holds 42 IPR rows (21 Twyford template + 1 Alca + 10 Jaquar +
   10 Artize incl. derived variants), taxonomy (49 nodes + 4 BK crosswalk IDs), brands, price
   events, todos. Latest emission: 42/42 rows, 100% zero-touch, Cloudinary covers live.

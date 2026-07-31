@@ -5,7 +5,7 @@ import fs from "node:fs";
 import crypto from "node:crypto";
 import { UploadLedger } from "../models/UploadLedger.js";
 import { triageFile } from "../stages/stage0_triage.js";
-import { createRun } from "../services/runs.js";
+import { createRun, toRunRelative } from "../services/runs.js";
 import { fetchUrl, htmlToText, productSignal, crawlForProducts } from "../services/weburl.js";
 
 const router = express.Router();
@@ -22,7 +22,9 @@ router.post("/", upload.array("files", 20), async (req, res, next) => {
 
     const results = [];
     for (const f of req.files) {
-      const storedPath = path.join(intakeDir, f.originalname);
+      // basename, not the raw upload name: multer reports whatever the client
+      // sent, and "../../x" would otherwise write outside the run directory.
+      const storedPath = path.join(intakeDir, path.basename(f.originalname));
       fs.writeFileSync(storedPath, f.buffer);
       const sha256 = crypto.createHash("sha256").update(f.buffer).digest("hex");
 
@@ -35,8 +37,8 @@ router.post("/", upload.array("files", 20), async (req, res, next) => {
 
       const doc = await UploadLedger.create({
         originalName: f.originalname,
-        storedPath,
-        previewPath: triage.previewPath,
+        storedPath: toRunRelative(storedPath),
+        previewPath: toRunRelative(triage.previewPath),
         mimeType: f.mimetype,
         size: f.size,
         sha256,
@@ -77,8 +79,8 @@ router.post("/url", async (req, res, next) => {
       run.log({ kind: "triage", file: fileName, url: sourceUrl, label: triage.label });
       return UploadLedger.create({
         originalName: fileName,
-        storedPath,
-        previewPath: triage.previewPath ?? null,
+        storedPath: toRunRelative(storedPath),
+        previewPath: toRunRelative(triage.previewPath ?? null),
         mimeType: contentType,
         size: buffer.length,
         sha256: crypto.createHash("sha256").update(buffer).digest("hex"),
