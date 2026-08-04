@@ -114,7 +114,12 @@ else
 fi
 
 # ─── build + push ───
-docker build --platform linux/amd64 -t "$IMAGE" /opt/bk/src/server
+# Context is the repo root, not src/server: routes/emit.js reads fixtures/,
+# which is a sibling of server/. Building from server/ leaves the BK template
+# out of the image and every emission 500s. Same reason as 01-build-and-push.sh.
+docker build --platform linux/amd64 \
+  -f /opt/bk/src/server/Dockerfile \
+  -t "$IMAGE" /opt/bk/src
 aws ecr get-login-password --region "$REGION" \
   | docker login --username AWS --password-stdin "${IMAGE%%/*}"
 docker push "$IMAGE"
