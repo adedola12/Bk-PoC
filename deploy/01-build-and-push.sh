@@ -36,10 +36,15 @@ aws ecr get-login-password --region "$AWS_REGION" \
 
 # --platform is not optional: EC2 x86 instances cannot run an arm64 image built
 # on an Apple Silicon Mac, and the failure mode is an opaque "exec format error".
+# Context is the repo root, not $ROOT/server: routes/emit.js reads fixtures/,
+# which lives above server/. Building from server/ leaves it out of the image
+# and every emission 500s with "File not found: /fixtures/..." while the
+# healthcheck and all read routes stay green. See server/Dockerfile.
 docker build --platform linux/amd64 \
+  -f "$ROOT/server/Dockerfile" \
   -t "$REGISTRY/$ECR_REPO:$TAG" \
   -t "$REGISTRY/$ECR_REPO:latest" \
-  "$ROOT/server"
+  "$ROOT"
 
 docker push "$REGISTRY/$ECR_REPO:$TAG"
 docker push "$REGISTRY/$ECR_REPO:latest"

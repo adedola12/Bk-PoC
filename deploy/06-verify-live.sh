@@ -46,7 +46,7 @@ FE="https://${FRONTEND_DOMAIN:-$CLOUDFRONT_DOMAIN}"
 # Checked first and explicitly: NXDOMAIN here is the single failure that also
 # blocks certificate issuance, so a bare "connection failed" further down would
 # send you looking in the wrong place.
-step "1/6  DNS"
+step "1/7  DNS"
 RESOLVED="$(getent hosts "$API_DOMAIN" 2>/dev/null | awk '{print $1}' | head -1)"
 if [ -z "$RESOLVED" ]; then
   fail "$API_DOMAIN does not resolve (NXDOMAIN)"
@@ -73,7 +73,7 @@ fi
 # ───────────────────────────── 2. TLS ─────────────────────────────
 # No -k anywhere in this script: the whole point is that the certificate is
 # trusted by a default trust store, because the browser will insist on it.
-step "2/6  TLS certificate"
+step "2/7  TLS certificate"
 if curl -fsS --max-time 20 "$API/healthz" >/dev/null 2>&1; then
   pass "certificate is valid and trusted"
   if command -v openssl >/dev/null 2>&1; then
@@ -87,7 +87,7 @@ else
 fi
 
 # ──────────────────────────── 3. API ─────────────────────────────
-step "3/6  API"
+step "3/7  API"
 HEALTH="$(curl -fsS --max-time 20 "$API/healthz" 2>/dev/null)"
 if [ -z "$HEALTH" ]; then
   fail "GET /healthz unreachable"
@@ -105,7 +105,7 @@ done
 # The gap this script exists to close. server/index.js:38-42 allows an origin
 # only if it is in CORS_ORIGINS (normalised) or matches the Vercel preview
 # pattern; anything else is refused with 403 by the error tail at :72-75.
-step "4/6  CORS (browser path)"
+step "4/7  CORS (browser path)"
 # Both assertions below read a header that is ABSENT on refusal, so an
 # unreachable API would satisfy the negative check by accident. Confirm the
 # server answered at all before drawing any conclusion from a missing header.
@@ -147,7 +147,7 @@ else
 fi
 
 # ────────────────────────── 5. Frontend ──────────────────────────
-step "5/6  Frontend"
+step "5/7  Frontend"
 for p in / /products /review; do
   code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "${FE}${p}")"
   [ "$code" = "200" ] && pass "GET $p -> 200" || fail "GET $p -> $code"
@@ -160,7 +160,7 @@ code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$FE/route-that-doe
                     || fail "SPA fallback broken: unknown route -> $code"
 
 # ─────────────────────── 6. Bundle freshness ─────────────────────
-step "6/6  Published bundle"
+step "6/7  Published bundle"
 ENTRY="$(curl -fsS --max-time 20 "$FE/index.html" 2>/dev/null \
          | grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' | head -1)"
 if [ -z "$ENTRY" ]; then
@@ -172,6 +172,34 @@ else
   else
     fail "bundle $ENTRY does NOT reference $API_DOMAIN"
     warn "VITE_API_BASE is inlined at build time — run ./deploy/02-deploy-frontend.sh to rebuild"
+  fi
+fi
+
+# ──────────────────── 7. Emission (the demo's last step) ─────────
+# Every other check here is a GET. Emission is the only route that reads
+# fixtures/ off disk, and it shipped broken once — the image was built with a
+# server/ context, so the BK template was never in it. DNS, TLS, health and
+# every read route stayed green while the final step of the demo 500'd.
+#
+# Dry run: generate=false makes no Anthropic calls, and emitting is idempotent
+# (it rewrites dispositions and upserts todos, creating no new products).
+step "7/7  Emission"
+EMIT_BODY="$(curl -fsS --max-time 300 -X POST "$API/api/emit" \
+              -H 'Content-Type: application/json' \
+              -H "Origin: https://${FRONTEND_DOMAIN:-$CLOUDFRONT_DOMAIN}" \
+              -d '{"generate":false}' 2>/dev/null)"
+if [ -z "$EMIT_BODY" ]; then
+  fail "POST /api/emit returned no body — the route is failing"
+  warn "if this is 'File not found: /fixtures/...' the image was built from the wrong context (see server/Dockerfile)"
+elif printf '%s' "$EMIT_BODY" | grep -q '"error"'; then
+  fail "POST /api/emit → $(printf '%s' "$EMIT_BODY" | head -c 200)"
+  warn "'File not found: /fixtures/...' means fixtures/ is missing from the image — rebuild with 01-build-and-push.sh"
+else
+  ROWS="$(printf '%s' "$EMIT_BODY" | grep -oE '"emittedRows":[0-9]+' | head -1 | cut -d: -f2)"
+  if [ -n "$ROWS" ] && [ "$ROWS" -gt 0 ] 2>/dev/null; then
+    pass "emission wrote $ROWS row(s) into the BK template"
+  else
+    fail "emission returned no rows: $(printf '%s' "$EMIT_BODY" | head -c 200)"
   fi
 fi
 
