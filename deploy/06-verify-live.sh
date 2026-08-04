@@ -47,7 +47,26 @@ FE="https://${FRONTEND_DOMAIN:-$CLOUDFRONT_DOMAIN}"
 # blocks certificate issuance, so a bare "connection failed" further down would
 # send you looking in the wrong place.
 step "1/7  DNS"
-RESOLVED="$(getent hosts "$API_DOMAIN" 2>/dev/null | awk '{print $1}' | head -1)"
+# getent is glibc-only: absent on macOS and on Git Bash / MSYS under Windows,
+# where its absence reported a healthy domain as NXDOMAIN. Fall back through
+# the resolvers those platforms do ship, and only claim NXDOMAIN when a
+# resolver actually ran and found nothing.
+resolve_a() {
+  if command -v getent >/dev/null 2>&1; then
+    getent hosts "$1" 2>/dev/null | awk '{print $1}' | head -1
+  elif command -v dig >/dev/null 2>&1; then
+    dig +short "$1" A 2>/dev/null | grep -E '^[0-9.]+$' | head -1
+  elif command -v nslookup >/dev/null 2>&1; then
+    # nslookup prints the RESOLVER's own address first ("Server:/Address:"),
+    # then the answer after "Name:". Taking the first Address: yields the
+    # router (often an IPv6 link-local like fe80::1), not the record.
+    nslookup "$1" 2>/dev/null \
+      | awk '/^Name:/{ans=1} ans && /Address(es)?:/{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+(\.[0-9]+){3}$/){print $i; exit}}'
+  elif command -v ping >/dev/null 2>&1; then
+    ping -n 1 -w 1000 "$1" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1
+  fi
+}
+RESOLVED="$(resolve_a "$API_DOMAIN")"
 if [ -z "$RESOLVED" ]; then
   fail "$API_DOMAIN does not resolve (NXDOMAIN)"
   cat <<EOF
