@@ -22,7 +22,7 @@ import { mapIprToRow } from "../stages/stage7_map.js";
 import { generateContent, factCheck } from "../stages/stage8_generate.js";
 import { gateRow } from "../stages/stage9_gate.js";
 import { createRun } from "../services/runs.js";
-import { hasApiKey } from "../services/anthropic.js";
+import { aiAvailable } from "../services/anthropic.js";
 
 const FULL_RUN = process.argv.includes("--full"); // full 104-pp handbook (T7 timing)
 
@@ -37,7 +37,7 @@ const fx = (name) => path.join(FIXTURES, name);
 
 const run = createRun("eval");
 console.log(`\nBK-Ingest evaluation — run ${run.runId}`);
-if (!hasApiKey()) {
+if (!aiAvailable()) {
   console.log("⚠ ANTHROPIC_API_KEY not set: LLM-tier checks will fail honestly (never guessed).\n");
 }
 
@@ -260,7 +260,7 @@ try {
   const { rows: twyRows } = await readDataRows(fx("01_Twyford__Sanitary_Ware__Wash_Basins__Pedestal.xlsx"));
   const styleExamples = twyRows.map((r) => r.values["Description"]).filter(Boolean).slice(0, 2);
   const target = extractedByFile["Alca_Drain__AM101_.pdf"]?.[0];
-  if (target && hasApiKey()) {
+  if (target && aiAvailable()) {
     const gen = await generateContent(target, styleExamples, { log: run.log });
     const words = gen.description.split(/\s+/).filter(Boolean).length;
     genCheck = {

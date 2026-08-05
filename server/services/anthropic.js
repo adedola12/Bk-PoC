@@ -1,20 +1,59 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { AnthropicBedrock } from "@anthropic-ai/bedrock-sdk";
 
 /**
  * Single Anthropic entry point (§9): structured JSON outputs, retries with
  * backoff, per-call cost + latency logged to the run record (feeds T7).
+ *
+ * Two providers, one call site:
+ *
+ *   anthropic — the first-party API, authenticated with ANTHROPIC_API_KEY
+ *   bedrock   — Claude on Amazon Bedrock, authenticated with IAM
+ *
+ * Bedrock is what makes this deployable without a key: the EC2 instance role
+ * signs the request, so no secret is staged on the box, none reaches Parameter
+ * Store, and nothing can leak through a transcript. The default reflects that —
+ * a key selects the first-party API, and its absence selects Bedrock — so the
+ * box does the right thing with no configuration and a laptop with a key in
+ * .env keeps behaving as it always did. Set AI_PROVIDER to force either one.
  */
-export const MODEL = "claude-sonnet-4-6"; // D8 default
+const PROVIDER = (
+  process.env.AI_PROVIDER || (process.env.ANTHROPIC_API_KEY ? "anthropic" : "bedrock")
+).toLowerCase();
+
+const AWS_REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "eu-west-1";
+
+/**
+ * Bedrock model IDs are not the first-party IDs.
+ *
+ * Current Claude models are not callable on Bedrock by their bare ID — an
+ * on-demand `anthropic.claude-*` call is rejected with "Invocation ... with
+ * on-demand throughput isn't supported". They must be addressed through a
+ * cross-region INFERENCE PROFILE, which is the same ID behind a region prefix:
+ * `eu.` (EU regions) or `global.`. Hence `eu.anthropic.claude-sonnet-4-6`.
+ */
+const MODEL_BY_PROVIDER = {
+  anthropic: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6", // D8 default
+  bedrock: process.env.BEDROCK_MODEL_ID || "eu.anthropic.claude-sonnet-4-6",
+};
+
+export const MODEL = MODEL_BY_PROVIDER[PROVIDER] ?? MODEL_BY_PROVIDER.anthropic;
 
 // USD per MTok for the D8 default model (input / output) — used only for the
 // run-record cost estimate shown in reports; update if pricing changes.
+// Bedrock is partner-priced and can differ from these first-party rates, so on
+// Bedrock treat the reported cost as indicative, not billing-accurate.
 const PRICE = { input: 3, output: 15 };
 
 // Lazy: ESM hoists imports above dotenv.config() in entrypoints, so the env
 // var may not exist at module-evaluation time. Trim guards stray whitespace
 // pasted into .env (an invalid header value otherwise).
 let client;
-const getClient = () => (client ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim() }));
+const getClient = () =>
+  (client ??=
+    PROVIDER === "bedrock"
+      ? new AnthropicBedrock({ awsRegion: AWS_REGION })
+      : new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim() }));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -44,7 +83,7 @@ export async function callClaudeJSON({ system, messages, maxTokens = 1500, log, 
       const usage = res.usage || {};
       const costUsd =
         ((usage.input_tokens || 0) * PRICE.input + (usage.output_tokens || 0) * PRICE.output) / 1e6;
-      log?.({ kind: "ai_call", tag, model: MODEL, latencyMs, usage, costUsd });
+      log?.({ kind: "ai_call", tag, provider: PROVIDER, model: MODEL, latencyMs, usage, costUsd });
 
       const text = res.content.find((b) => b.type === "text")?.text ?? "";
       const match = text.match(/\{[\s\S]*\}/); // tolerate stray prose/fences
@@ -52,13 +91,28 @@ export async function callClaudeJSON({ system, messages, maxTokens = 1500, log, 
       return JSON.parse(match[0]);
     } catch (err) {
       lastErr = err;
-      log?.({ kind: "ai_error", tag, attempt: i + 1, message: err.message });
+      log?.({ kind: "ai_error", tag, provider: PROVIDER, attempt: i + 1, message: err.message });
       if (i < attempts - 1) await sleep(1000 * 2 ** i);
     }
   }
   throw lastErr;
 }
 
-export function hasApiKey() {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+/**
+ * Is an AI provider configured? Gates every AI stage — when false the pipeline
+ * fails closed to human triage rather than erroring (HANDOFF_PROMPT.md §2).
+ *
+ * On Bedrock there is no key to look for: credentials come from the instance
+ * role, an SSO profile, or the environment, and the SDK resolves them at call
+ * time. A region is the one thing that must be known up front, so that is what
+ * we check — a genuinely absent credential surfaces as a failed call, which the
+ * retry/fail-closed path already handles.
+ */
+export function aiAvailable() {
+  return PROVIDER === "bedrock" ? Boolean(AWS_REGION) : Boolean(process.env.ANTHROPIC_API_KEY);
+}
+
+/** Which provider and model this process will use — surfaced by /healthz. */
+export function aiProvider() {
+  return { provider: PROVIDER, model: MODEL, region: PROVIDER === "bedrock" ? AWS_REGION : null };
 }

@@ -1,5 +1,5 @@
 import { TAXONOMY_TREE } from "../taxonomy/index.js";
-import { callClaudeJSON, hasApiKey } from "../services/anthropic.js";
+import { callClaudeJSON, aiAvailable } from "../services/anthropic.js";
 
 /**
  * Stage 4 — Taxonomy classification (D1): three methods in cost order —
@@ -60,7 +60,7 @@ export function classifyLexical(iprText) {
 
 /** Method 3 — semantic (Claude): pick from candidate nodes. */
 async function classifySemantic(iprText, log) {
-  if (!hasApiKey()) return null;
+  if (!aiAvailable()) return null;
   const leafPaths = VOCAB.filter((n) => n.isLeaf || n.keywords.length).map((n) => n.path);
   const json = await callClaudeJSON({
     system: `You classify construction-materials products into a trade taxonomy.

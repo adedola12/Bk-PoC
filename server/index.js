@@ -9,6 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
+import { aiAvailable, aiProvider } from "./services/anthropic.js";
 import { connectDB } from "./db.js";
 import { ensureBrandsSeeded } from "./stages/stage5_brand.js";
 import uploadRoutes from "./routes/uploads.js";
@@ -52,8 +53,15 @@ app.use(
   })
 );
 
+// `ai` reports which provider this process resolved and whether it is usable.
+// Without it, a box with no credentials looks identical to a healthy one until
+// the first upload silently falls back to human triage.
 app.get(["/health", "/healthz"], (req, res) =>
-  res.json({ ok: true, db: mongoose.connection.readyState === 1 })
+  res.json({
+    ok: true,
+    db: mongoose.connection.readyState === 1,
+    ai: { ...aiProvider(), available: aiAvailable() },
+  })
 );
 
 // mounted at both bare and /api paths (ADLM compatibility pattern)

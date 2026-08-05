@@ -3,7 +3,7 @@ import fs from "node:fs";
 import { detectBkTemplateSignature } from "../services/xlsx.js";
 import { extractText, rasterizePages } from "../services/pdf.js";
 import { extractDocxText } from "../services/docx.js";
-import { callClaudeJSON, hasApiKey } from "../services/anthropic.js";
+import { callClaudeJSON, aiAvailable } from "../services/anthropic.js";
 import { THRESHOLDS } from "../services/confidence.js";
 
 /**
@@ -118,7 +118,7 @@ export async function triageFile(filePath, ctx = {}) {
   }
 
   // ── LLM tier ───────────────────────────────────────────────────────
-  if (!hasApiKey()) {
+  if (!aiAvailable()) {
     // No key: never guess (integrity rule 3) — route to human triage.
     return finalize({
       label: "other",
