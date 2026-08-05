@@ -126,19 +126,38 @@ for this account.
 
 ## Still outstanding
 
-**Opus 5 is subscribed but not yet callable.** The Marketplace agreement was
-accepted via the API (`bedrock create-foundation-model-agreement`, offer
-`offer-f3u6lgbrem3zs`, $5/$25 per MTok global standard, usage-based, no
-refunds), and the control plane now reports Opus 5 **identical to the working
-Sonnet 4.6** — `agreementAvailability AVAILABLE`, `authorizationStatus
-AUTHORIZED`, `entitlementAvailability AVAILABLE`, `regionAvailability
-AVAILABLE`, in all six regions the `eu.` profile spans. `InvokeModel`
-nevertheless still returns `AccessDeniedException` ("not available for this
-account") on the bare ID and on both the `eu.` and `global.` profiles, while
-Sonnet 4.6 succeeds on the same credentials in the same second.
+**Three newer models are subscribed but none are callable.** Marketplace
+agreements were accepted via the API (`bedrock create-foundation-model-agreement`),
+all usage-based with no upfront cost and no refunds:
 
-So this is runtime-entitlement propagation lagging the agreement, not a
-configuration error — there is nothing further to change, only to re-test:
+| Model | Offer | Global standard $/MTok |
+|---|---|---|
+| `anthropic.claude-opus-5` | `offer-f3u6lgbrem3zs` | $5 in / $25 out |
+| `anthropic.claude-sonnet-5` | `offer-2ykemehpsyf7g` | $2 in / $10 out |
+| `anthropic.claude-opus-4-8` | `offer-wdkl4yk6s7uu4` | $5 in / $25 out |
+
+All three report `agreementAvailability AVAILABLE`, `authorizationStatus
+AUTHORIZED`, `entitlementAvailability AVAILABLE`, `regionAvailability
+AVAILABLE` — **identical to the working Sonnet 4.6** — and all three still
+return `AccessDeniedException` ("not available for this account") from
+`InvokeModel`, on the bare ID and on both the `eu.` and `global.` profiles,
+while Sonnet 4.6 succeeds on the same credentials in the same second.
+
+Opus 5 has been in that state for over an hour. That it reproduces identically
+on all three models makes simple propagation lag the weaker explanation and an
+account-level gate on newer models the likelier one — consistent with the
+error's own hint to "contact AWS Sales".
+
+**Worth knowing before opening a case:** the Bedrock use-case registration on
+this account is filed under **Spendbase** (`https://www.spendbase.co/`, "Software
+as a Service"), describing AI-assisted spend-management and procurement
+workflows — not ADLM, and not this catalogue-ingestion use case. Read it with
+`aws bedrock get-use-case-for-model-access` (the `formData` field is
+**double**-base64-encoded). Whether the account is reseller-managed is worth
+establishing, since that commonly gates access to newest models regardless of
+an accepted agreement.
+
+Nothing further is configurable from here; the remaining action is to re-test:
 
 ```bash
 aws bedrock-runtime invoke-model --region eu-west-1 \
@@ -147,14 +166,13 @@ aws bedrock-runtime invoke-model --region eu-west-1 \
   /dev/stdout
 ```
 
-When it answers, switching is one variable — set
-`BEDROCK_MODEL_ID=eu.anthropic.claude-opus-5` in `deploy/docker-compose.yml`
-and restart the API. The running config is deliberately left on Sonnet 4.6
-until then, so a half-propagated entitlement cannot take the demo down.
+When one answers, switching is one variable — set `BEDROCK_MODEL_ID` in
+`deploy/docker-compose.yml` and restart the API. The running config is
+deliberately left on Sonnet 4.6 until then, so an entitlement that is accepted
+but not served cannot take the demo down.
 
-`claude-sonnet-5`, `claude-opus-4-8` and `claude-opus-4-7` remain unsubscribed
-and return the same error. Enabled and callable today: Sonnet 4.6 (in use),
-Opus 4.6, Sonnet 4.5, Haiku 4.5, Opus 4.5.
+`claude-opus-4-7` remains unsubscribed. Enabled and callable today: Sonnet 4.6
+(in use), Opus 4.6, Sonnet 4.5, Haiku 4.5, Opus 4.5.
 
 Note that `aws bedrock list-foundation-models` lists every model in the region
 regardless of entitlement, so it shows Opus 5 as `ACTIVE` and always did. Only
