@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import { FiAlertTriangle, FiCheck, FiRefreshCw, FiSearch, FiCheckCircle, FiPlay } from "react-icons/fi";
 import { fetchTriage, verifyTriage, verifyAllTriage, extractUpload, previewUrl, errMsg } from "../api.js";
+import { rememberExtracted } from "../session.js";
 
 // files whose route makes them extractable — step 2 runs the pipeline here so
 // "process file" is one place: confirm the classification, then extract.
@@ -71,6 +72,7 @@ export default function TriageVerify() {
     setBusy(upload._id);
     try {
       const r = await extractUpload(upload._id);
+      rememberExtracted(upload._id); // step 3 scopes to what this session extracted
       toast.success(
         `${r.count} row(s) extracted from ${upload.originalName}${
           r.anomaliesFlagged ? ` · ${r.anomaliesFlagged} anomalies → review` : ""
