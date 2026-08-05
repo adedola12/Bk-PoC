@@ -143,10 +143,13 @@ return `AccessDeniedException` ("not available for this account") from
 `InvokeModel`, on the bare ID and on both the `eu.` and `global.` profiles,
 while Sonnet 4.6 succeeds on the same credentials in the same second.
 
-Opus 5 has been in that state for over an hour. That it reproduces identically
-on all three models makes simple propagation lag the weaker explanation and an
-account-level gate on newer models the likelier one — consistent with the
-error's own hint to "contact AWS Sales".
+Re-tested at 11:49, 12:49 and 13:27 UTC — unchanged each time, with Sonnet 4.6
+passing as a control in the same run. Opus 5 has now held that state for ~110
+minutes. That it reproduces identically across three independently accepted
+agreements makes propagation lag the weaker explanation and an account-level
+gate on newest-generation models the likelier one — consistent with the error's
+own hint to "contact AWS Sales". Polling was stopped after the third check;
+this needs AWS to answer, not more retries.
 
 **Worth knowing before opening a case:** the Bedrock use-case registration on
 this account is filed under **Spendbase** (`https://www.spendbase.co/`, "Software
