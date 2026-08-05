@@ -126,16 +126,40 @@ for this account.
 
 ## Still outstanding
 
-**Only Claude 4.6 and older are enabled on Bedrock.** `anthropic.claude-opus-5`,
-`claude-sonnet-5`, `claude-opus-4-8` and `claude-opus-4-7` all return
-`AccessDeniedException` ("not available for this account"). Enabled and callable:
-Sonnet 4.6 (in use), Opus 4.6, Sonnet 4.5, Haiku 4.5, Opus 4.5. To use a newer
-model, enable it on the Bedrock **Model access** page — no code change is needed
-beyond `BEDROCK_MODEL_ID`.
+**Opus 5 is subscribed but not yet callable.** The Marketplace agreement was
+accepted via the API (`bedrock create-foundation-model-agreement`, offer
+`offer-f3u6lgbrem3zs`, $5/$25 per MTok global standard, usage-based, no
+refunds), and the control plane now reports Opus 5 **identical to the working
+Sonnet 4.6** — `agreementAvailability AVAILABLE`, `authorizationStatus
+AUTHORIZED`, `entitlementAvailability AVAILABLE`, `regionAvailability
+AVAILABLE`, in all six regions the `eu.` profile spans. `InvokeModel`
+nevertheless still returns `AccessDeniedException` ("not available for this
+account") on the bare ID and on both the `eu.` and `global.` profiles, while
+Sonnet 4.6 succeeds on the same credentials in the same second.
+
+So this is runtime-entitlement propagation lagging the agreement, not a
+configuration error — there is nothing further to change, only to re-test:
+
+```bash
+aws bedrock-runtime invoke-model --region eu-west-1 \
+  --model-id eu.anthropic.claude-opus-5 \
+  --body fileb://<(echo '{"anthropic_version":"bedrock-2023-05-31","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}') \
+  /dev/stdout
+```
+
+When it answers, switching is one variable — set
+`BEDROCK_MODEL_ID=eu.anthropic.claude-opus-5` in `deploy/docker-compose.yml`
+and restart the API. The running config is deliberately left on Sonnet 4.6
+until then, so a half-propagated entitlement cannot take the demo down.
+
+`claude-sonnet-5`, `claude-opus-4-8` and `claude-opus-4-7` remain unsubscribed
+and return the same error. Enabled and callable today: Sonnet 4.6 (in use),
+Opus 4.6, Sonnet 4.5, Haiku 4.5, Opus 4.5.
 
 Note that `aws bedrock list-foundation-models` lists every model in the region
-regardless of entitlement, so it will show Opus 5 as `ACTIVE`. Only an actual
-invoke tells you what you can call.
+regardless of entitlement, so it shows Opus 5 as `ACTIVE` and always did. Only
+an actual invoke tells you what you can call — and, as this shows, even
+`get-foundation-model-availability` can report ready before the runtime agrees.
 
 Nothing else needs redeploying.
 
