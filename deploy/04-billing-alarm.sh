@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
-# CloudWatch billing alarm at $10 so an unexpected cost cannot run silently.
+# CloudWatch billing alarm so an unexpected cost cannot run silently.
 #
-#   ./deploy/04-billing-alarm.sh you@example.com
+#   ./deploy/04-billing-alarm.sh you@example.com [threshold]
 #
 # Billing metrics are published ONLY to us-east-1, regardless of where your
 # resources live. That is an AWS constraint, not a mistake in this script.
+#
+# The default is $100, raised from $10 once inference moved onto Bedrock: model
+# usage bills to this account, and vision extraction over a large catalogue
+# passes $10 quickly enough that the alarm fires on normal work rather than on
+# anything unexpected.
+#
+# The threshold is part of the alarm NAME, so re-running with a new value
+# creates a SECOND alarm rather than editing the first. Delete the old one, or
+# the superseded threshold keeps firing.
 set -euo pipefail
 
-EMAIL="${1:?usage: $0 <email-address>}"
-THRESHOLD="${2:-10}"
+EMAIL="${1:?usage: $0 <email-address> [threshold]}"
+THRESHOLD="${2:-100}"
 BILLING_REGION=us-east-1
 
 TOPIC_ARN="$(aws sns create-topic --name bk-ingest-billing --region "$BILLING_REGION" \
@@ -17,6 +26,10 @@ TOPIC_ARN="$(aws sns create-topic --name bk-ingest-billing --region "$BILLING_RE
 aws sns subscribe --topic-arn "$TOPIC_ARN" --protocol email --notification-endpoint "$EMAIL" \
   --region "$BILLING_REGION" >/dev/null
 echo "==> subscription requested for $EMAIL — CONFIRM THE EMAIL or no alarm will reach you"
+echo "    Verify with:"
+echo "      aws sns list-subscriptions-by-topic --topic-arn $TOPIC_ARN --region $BILLING_REGION"
+echo "    A SubscriptionArn of 'PendingConfirmation' or 'Deleted' means the alarm"
+echo "    notifies nobody. The alarm itself still reads OK, so this fails silently."
 
 aws cloudwatch put-metric-alarm \
   --region "$BILLING_REGION" \

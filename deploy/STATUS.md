@@ -61,7 +61,8 @@ All six sections of `06-verify-live.sh` pass.
 | SPA fallback | working | `/`, `/products`, `/review` and an unknown route all 200 |
 | Bundle API base | correct | `index-DXH5tPCG.js` calls `api-bk.adlmstudio.com` |
 | ECR image | pushed | `bk-ingest-api:latest` |
-| Billing alarm | `OK` | `bk-ingest-estimated-charges-over-10usd`, $10, us-east-1 |
+| Billing alarm | `OK` | `bk-ingest-estimated-charges-over-100usd`, $100, us-east-1 |
+| AI provider | Bedrock, via instance role | `/healthz` → `eu.anthropic.claude-sonnet-4-6`, eu-west-1 |
 | SSM access | online | `aws ssm start-session --target i-0949cc6784a39c72c` |
 
 CORS had never been exercised from a browser origin before — every earlier check
@@ -90,23 +91,51 @@ Note the apex `adlmstudio.com` still has no record of its own and does not
 resolve to anything. That is unchanged and unrelated: nothing in this deployment
 uses the apex.
 
+## Resolved: AI extraction runs, on Bedrock
+
+Claude now runs on **Amazon Bedrock**, signed with the EC2 instance role — there
+is no API key on the box, none in Parameter Store, and none that can leak
+through a transcript. Verified end to end: a real upload classifies
+`product_datasheet` at 0.97 via `method: text` (the AI tier), where it
+previously fell back to `rule` at 0.
+
+An earlier revision of this file said no `ANTHROPIC_API_KEY` was on the
+instance. **That was a bad measurement** — the probe let the host shell expand
+`$ANTHROPIC_API_KEY` before it reached the container, so it reported "absent"
+without reading the container at all. `.env.migration` now carries a working
+key. It is unused: `AI_PROVIDER=bedrock` is set explicitly in
+`docker-compose.yml` rather than inferred from the key's absence, because a
+stale key silently outranking the instance role is the failure worth designing
+out. To check what a box actually resolved, read `/healthz` — it reports the
+provider, model and region.
+
+Two Bedrock facts that cost real time to rediscover:
+
+- **Bare model IDs are rejected.** Current Claude models cannot be invoked
+  on-demand as `anthropic.claude-*`; they must be addressed through a
+  cross-region **inference profile** — the same ID behind an `eu.` or `global.`
+  prefix. The error ("not available for this account") points at billing rather
+  than at the real cause.
+- **`AnthropicBedrock` no-ops against `@anthropic-ai/sdk` 0.57.** Its URL
+  rewrite reads a request field that version never passes, so the call goes to
+  `/v1/messages` on `bedrock-runtime` and returns `UnknownOperationException`
+  with nothing indicating a version skew. Fixed by the bump to 0.115.
+
+The newer `AnthropicBedrockMantle` client is **not** used — its endpoint 404s
+for this account.
+
 ## Still outstanding
 
-**No `ANTHROPIC_API_KEY` on the instance.** Confirmed absent inside `bk-api-1`;
-`.env.migration` carries MongoDB and Cloudinary only. The system degrades
-honestly — every AI call fails closed and uploads route to human triage
-(`HANDOFF_PROMPT.md` §2) — so intake, the registries, review queues, the price
-ledger, template emission and the whole UI work as normal, but **live AI
-extraction will not run in the demo**.
+**Only Claude 4.6 and older are enabled on Bedrock.** `anthropic.claude-opus-5`,
+`claude-sonnet-5`, `claude-opus-4-8` and `claude-opus-4-7` all return
+`AccessDeniedException` ("not available for this account"). Enabled and callable:
+Sonnet 4.6 (in use), Opus 4.6, Sonnet 4.5, Haiku 4.5, Opus 4.5. To use a newer
+model, enable it on the Bedrock **Model access** page — no code change is needed
+beyond `BEDROCK_MODEL_ID`.
 
-This cannot be staged from a machine that does not hold the key. To add it
-without putting it in git or a transcript:
-
-```bash
-export ANTHROPIC_API_KEY=...
-./deploy/write-env-migration.sh      # prints names and set/skipped status only
-./deploy/05-deploy-via-ssm.sh        # restages config, restarts the API
-```
+Note that `aws bedrock list-foundation-models` lists every model in the region
+regardless of entitlement, so it will show Opus 5 as `ACTIVE`. Only an actual
+invoke tells you what you can call.
 
 Nothing else needs redeploying.
 
@@ -135,6 +164,27 @@ the table above. `.env.migration` must be regenerated from real secrets via
 needed only to **rebuild and push the image**; neither is needed to verify or
 operate the already-running stack, which is why `06-verify-live.sh` is the right
 tool for a pre-demo check.
+
+## Billing alarm
+
+Raised from **$10 to $100** (`bk-ingest-estimated-charges-over-100usd`,
+us-east-1) now that inference bills to this account: vision extraction over a
+large catalogue passes $10 on normal work, so the old threshold would have fired
+on success rather than on anything unexpected. The $10 alarm was deleted — the
+threshold is part of the alarm name, so re-running `04-billing-alarm.sh` with a
+new value creates a second alarm instead of editing the first.
+
+**The email subscription had been deleted, so the alarm was notifying nobody.**
+`dolapo836@gmail.com` has been re-subscribed and is `PendingConfirmation` until
+the confirmation email is clicked. This fails silently in both states — the
+alarm still reads `OK`, because an alarm with no reachable subscriber looks
+exactly like a healthy one. Check it, don't assume it:
+
+```bash
+aws sns list-subscriptions-by-topic \
+  --topic-arn arn:aws:sns:us-east-1:065634457992:bk-ingest-billing \
+  --region us-east-1
+```
 
 ## Notes for whoever runs the demo
 
