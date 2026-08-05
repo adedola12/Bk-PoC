@@ -40,7 +40,11 @@ aws s3 cp dist/index.html "s3://$FRONTEND_BUCKET/index.html" \
 
 if [ -n "${CLOUDFRONT_DISTRIBUTION_ID:-}" ]; then
   echo "==> invalidating CloudFront"
-  aws cloudfront create-invalidation \
+  # MSYS_NO_PATHCONV: under Git Bash the "/*" invalidation path is rewritten
+  # into a Windows path before aws.exe sees it, so the invalidation silently
+  # covers the wrong thing and users keep the stale bundle. Same reason as the
+  # per-command uses in 05-deploy-via-ssm.sh.
+  MSYS_NO_PATHCONV=1 aws cloudfront create-invalidation \
     --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
     --paths "/*" --query 'Invalidation.Id' --output text
 else

@@ -86,14 +86,27 @@ export default function TriageVerify() {
     }
   };
 
-  // newest ledger entry per filename, extractable routes only
-  const extractable = [
-    ...new Map(
-      items
-        .filter((u) => EXTRACTABLE.includes(u.triage?.verifiedLabel || u.triage?.label))
-        .map((u) => [u.originalName, u])
-    ).values(),
-  ];
+  // Newest ledger entry per filename, extractable routes only.
+  //
+  // Pick the newest EXPLICITLY by createdAt. `new Map(pairs)` keeps the LAST
+  // pair for a duplicate key, and /triage sorts newest-first, so building the
+  // map from the list handed back the OLDEST row — for a re-uploaded file that
+  // is the migrated record whose source file never came across, and extraction
+  // failed with "not on this deployment" however many times you re-uploaded.
+  // The sort is also not purely chronological (needsVerification ranks first),
+  // so relying on list order at all is wrong.
+  const extractable = (() => {
+    const byName = new Map();
+    for (const u of items.filter((u) =>
+      EXTRACTABLE.includes(u.triage?.verifiedLabel || u.triage?.label)
+    )) {
+      const prev = byName.get(u.originalName);
+      if (!prev || new Date(u.createdAt) > new Date(prev.createdAt)) {
+        byName.set(u.originalName, u);
+      }
+    }
+    return [...byName.values()];
+  })();
 
   // search across filename, route label and AI summary
   const q = query.trim().toLowerCase();
