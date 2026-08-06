@@ -6,7 +6,13 @@
 # this app (Stage 0 triage snapshots, page rasterization, vision panel
 # segmentation) goes through them. A container lets us install them explicitly.
 #
-# Build context is `server/`. The application code is unchanged.
+# Build context is the REPO ROOT, not `server/`. It has to be: routes/emit.js
+# resolves the BK template as `<server>/../fixtures/...`, so `fixtures/` sits
+# one level above the application code. With a `server/` context it is outside
+# the build context entirely, never enters the image, and every emission fails
+# at runtime with `File not found: /fixtures/catalogue_template_...xlsx` — while
+# every read route and the healthcheck stay green. The application code is
+# unchanged: `/app` + `/fixtures` reproduces the repo's own layout.
 
 # ─── builder: compile/fetch native deps against the exact runtime libc ───
 FROM node:22-bookworm-slim AS builder
@@ -20,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev \
  && rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json ./
+COPY server/package.json server/package-lock.json ./
 # Production deps only. Building inside linux/amd64 is also what pulls the
 # correct @img/sharp-linux-x64 optional dependency — never ship a dev machine's
 # sharp binary.
@@ -44,13 +50,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && fc-cache -f
 
 COPY --from=builder /app/node_modules ./node_modules
-COPY . .
+COPY server ./
+
+# The BK bulk-upload template and the Twyford golden file, read at runtime by
+# routes/emit.js (TEMPLATE, and styleExamples() for the house-style prompt).
+# /fixtures is exactly what `path.resolve(__dirname, "../../fixtures")` yields
+# from /app/routes, so the same code path works in the container and locally.
+COPY fixtures /fixtures
 
 # server/services/runs.js resolves RUNS_ROOT to <server>/../runs — i.e. /runs
 # with this layout. Create it and hand it to the unprivileged node user.
 # Ephemeral, exactly as it was on Render: artifacts live for the container's
 # lifetime, which covers the emit -> download round trip.
-RUN mkdir -p /runs && chown -R node:node /runs /app
+RUN mkdir -p /runs && chown -R node:node /runs /app /fixtures
 USER node
 
 # PORT is read at server/index.js:81. 8080 is the AWS container convention.

@@ -28,9 +28,14 @@ export const uploadFromUrl = (url) => api.post("/uploads/url", { url }).then((re
 
 export const extractUpload = (id) => api.post(`/pipeline/${id}/extract`).then((res) => res.data);
 
-export const fetchIprs = () => api.get("/pipeline/iprs").then((res) => res.data);
+// uploadIds scopes both to specific source files; empty/omitted = whole store
+export const fetchIprs = (uploadIds = []) =>
+  api
+    .get("/pipeline/iprs", uploadIds.length ? { params: { uploads: uploadIds.join(",") } } : undefined)
+    .then((res) => res.data);
 
-export const runEmission = () => api.post("/emit", {}).then((res) => res.data);
+export const runEmission = (uploadIds = []) =>
+  api.post("/emit", uploadIds.length ? { uploadIds } : {}).then((res) => res.data);
 
 export const emissionDownloadUrl = (runId, file) => `${API_BASE}/api/emit/download/${runId}/${file}`;
 

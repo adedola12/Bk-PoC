@@ -162,12 +162,16 @@ router.post("/:uploadId/extract", async (req, res, next) => {
   }
 });
 
-/* ─── GET /iprs — extracted records + latest ledger price + cover image ─── */
+/* ─── GET /iprs — extracted records + latest ledger price + cover image.
+   `?uploads=id,id` narrows to those source files so a walkthrough sees only
+   what it just extracted; omitted returns the whole store as before. ─── */
 router.get("/iprs", async (req, res, next) => {
   try {
     const { PriceEvent } = await import("../models/PriceEvent.js");
     const { normCode } = await import("../stages/vision_extract.js");
-    const iprs = await IPR.find({}).sort({ createdAt: -1 }).limit(200).populate("upload", "originalName").lean();
+    const ids = String(req.query.uploads || "").split(",").map((s) => s.trim()).filter(Boolean);
+    const filter = ids.length ? { upload: { $in: ids } } : {};
+    const iprs = await IPR.find(filter).sort({ createdAt: -1 }).limit(200).populate("upload", "originalName").lean();
 
     const events = await PriceEvent.find({}).sort({ effectiveDate: 1 }).lean();
     const latestBySku = new Map();

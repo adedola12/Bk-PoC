@@ -54,9 +54,18 @@ done
 # ───────────────── 2. stage config + secrets in Parameter Store ─────────────────
 # Written every run so the box always converges on what is in this checkout.
 step "2/4  staging config in Parameter Store (secrets as SecureString)"
+# The AWS CLI on Windows is a native binary and cannot read an MSYS path like
+# /c/Users/... — `file://` arguments must be handed over as C:/Users/... . On
+# Linux and macOS cygpath does not exist and the path passes through unchanged.
+awspath() { if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s' "$1"; fi; }
+
+# MSYS_NO_PATHCONV applies to this one command only: Git Bash would otherwise
+# rewrite the parameter name /bk-ingest/deploy/... into a Windows path and SSM
+# rejects it as "not a fully qualified name". Setting it globally is wrong —
+# `git -C "$ROOT"` below relies on the conversion still happening.
 put() {  # put <name> <type> <file>
-  aws ssm put-parameter --region "$AWS_REGION" --name "$1" --type "$2" \
-    --overwrite --value "file://$3" >/dev/null
+  MSYS_NO_PATHCONV=1 aws ssm put-parameter --region "$AWS_REGION" --name "$1" --type "$2" \
+    --overwrite --value "file://$(awspath "$3")" >/dev/null
   echo "  $1  ($2)"
 }
 put "$PREFIX/env.migration"    SecureString "$MIG"
@@ -114,7 +123,12 @@ else
 fi
 
 # ─── build + push ───
-docker build --platform linux/amd64 -t "$IMAGE" /opt/bk/src/server
+# Context is the repo root, not src/server: routes/emit.js reads fixtures/,
+# which is a sibling of server/. Building from server/ leaves the BK template
+# out of the image and every emission 500s. Same reason as 01-build-and-push.sh.
+docker build --platform linux/amd64 \
+  -f /opt/bk/src/server/Dockerfile \
+  -t "$IMAGE" /opt/bk/src
 aws ecr get-login-password --region "$REGION" \
   | docker login --username AWS --password-stdin "${IMAGE%%/*}"
 docker push "$IMAGE"
@@ -166,7 +180,10 @@ LOG_GROUP=/aws/ssm/bk-ingest-deploy
 aws logs create-log-group --region "$AWS_REGION" --log-group-name "$LOG_GROUP" 2>/dev/null || true
 aws logs put-retention-policy --region "$AWS_REGION" --log-group-name "$LOG_GROUP" \
   --retention-in-days 14 2>/dev/null || true
-CMD_ID="$(aws ssm send-command --region "$AWS_REGION" \
+# MSYS_NO_PATHCONV again, for the same reason as put(): the log group name
+# /aws/ssm/bk-ingest-deploy would otherwise arrive as a C:/... path and fail
+# SSM's name pattern. Scoped to this command so git path conversion still works.
+CMD_ID="$(MSYS_NO_PATHCONV=1 aws ssm send-command --region "$AWS_REGION" \
   --instance-ids "$EC2_INSTANCE_ID" \
   --document-name AWS-RunShellScript \
   --comment "BK-Ingest build+deploy" \

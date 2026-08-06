@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { FiDownload, FiBox, FiTruck, FiTag, FiSearch } from "react-icons/fi";
 import { fetchIprs, runEmission, emissionDownloadUrl, errMsg } from "../api.js";
+import { extractedUploads } from "../session.js";
 
 const DISPOSITION = {
   PASS: "bg-emerald-100 text-emerald-800",
@@ -18,12 +19,20 @@ export default function Products() {
   const [emission, setEmission] = React.useState(null);
   const [query, setQuery] = React.useState("");
 
+  // Files extracted in this walkthrough. Default to showing only those — the
+  // IPR store accumulates across every run ever made, so an unscoped page
+  // buries the one file you just processed. Falls back to the full store when
+  // this session has extracted nothing yet.
+  const session = React.useMemo(() => extractedUploads(), []);
+  const [scoped, setScoped] = React.useState(session.length > 0);
+
   const load = React.useCallback(() => {
-    fetchIprs()
+    setLoading(true);
+    fetchIprs(scoped ? session : [])
       .then((i) => setIprs(Array.isArray(i) ? i : []))
       .catch((err) => toast.error(errMsg(err, "Could not load products")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [scoped, session]);
 
   React.useEffect(() => {
     load();
@@ -32,7 +41,7 @@ export default function Products() {
   const emit = async () => {
     setBusy("emit");
     try {
-      const r = await runEmission();
+      const r = await runEmission(scoped ? session : []);
       setEmission(r);
       toast.success(`Emitted ${r.emittedRows} rows — zero-touch ${(r.zeroTouch * 100).toFixed(0)}%`);
       load();
@@ -74,7 +83,11 @@ export default function Products() {
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold text-bk-navy">Products</h2>
             <p className="text-xs text-slate-600">
-              {q ? `${shown.length} of ${iprs.length} rows match "${query}"` : `${iprs.length} extracted rows in the IPR store.`}
+              {q
+                ? `${shown.length} of ${iprs.length} rows match "${query}"`
+                : scoped
+                ? `${iprs.length} row(s) from the ${session.length} file(s) you extracted.`
+                : `${iprs.length} extracted rows in the IPR store.`}
             </p>
           </div>
           <label className="relative" aria-label="Search products">
@@ -86,6 +99,15 @@ export default function Products() {
               className="w-60 rounded-md border border-slate-300 bg-white py-2 pl-8 pr-3 text-sm"
             />
           </label>
+          {session.length > 0 && (
+            <button
+              onClick={() => setScoped((s) => !s)}
+              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold"
+              title={scoped ? "Include everything extracted previously" : "Show only this session's files"}
+            >
+              {scoped ? "Showing this session · show all" : "Showing all · show this session"}
+            </button>
+          )}
           <button
             onClick={emit}
             disabled={busy === "emit" || !iprs.length}

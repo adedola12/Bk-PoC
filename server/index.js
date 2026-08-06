@@ -11,6 +11,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import { aiAvailable, aiProvider } from "./services/anthropic.js";
 import { connectDB } from "./db.js";
+import { requestLog } from "./middleware/requestLog.js";
 import { ensureBrandsSeeded } from "./stages/stage5_brand.js";
 import uploadRoutes from "./routes/uploads.js";
 import triageRoutes from "./routes/triage.js";
@@ -27,6 +28,7 @@ await ensureBrandsSeeded().catch((err) => console.error("brand seed failed:", er
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
+app.use(requestLog()); // one line per request — Render's only view into a live deploy
 app.use(express.json({ limit: "2mb" }));
 
 /* CORS — env-extendable allowlist merged with local dev origins (ADLM pattern).
