@@ -62,7 +62,7 @@ All six sections of `06-verify-live.sh` pass.
 | Bundle API base | correct | `index-DXH5tPCG.js` calls `api-bk.adlmstudio.com` |
 | ECR image | pushed | `bk-ingest-api:latest` |
 | Billing alarm | `OK` | `bk-ingest-estimated-charges-over-100usd`, $100, us-east-1 |
-| AI provider | Bedrock, via instance role | `/healthz` → `eu.anthropic.claude-sonnet-4-6`, eu-west-1 |
+| AI provider | Bedrock, via instance role | `/healthz` → `eu.anthropic.claude-opus-4-5-20251101-v1:0`, eu-west-1 |
 | SSM access | online | `aws ssm start-session --target i-0949cc6784a39c72c` |
 
 CORS had never been exercised from a browser origin before — every earlier check
@@ -170,12 +170,12 @@ aws bedrock-runtime invoke-model --region eu-west-1 \
 ```
 
 When one answers, switching is one variable — set `BEDROCK_MODEL_ID` in
-`deploy/docker-compose.yml` and restart the API. The running config is
-deliberately left on Sonnet 4.6 until then, so an entitlement that is accepted
-but not served cannot take the demo down.
+`deploy/docker-compose.yml` and restart the API. The running config is on **Opus 4.5** — the most capable model this account
+can actually call — so an entitlement that is accepted but not served cannot
+take the demo down.
 
-`claude-opus-4-7` remains unsubscribed. Enabled and callable today: Sonnet 4.6
-(in use), Opus 4.6, Sonnet 4.5, Haiku 4.5, Opus 4.5.
+`claude-opus-4-7` remains unsubscribed. Enabled and callable today: **Opus 4.5
+(in use)**, Opus 4.6, Sonnet 4.6, Sonnet 4.5, Haiku 4.5.
 
 Note that `aws bedrock list-foundation-models` lists every model in the region
 regardless of entitlement, so it shows Opus 5 as `ACTIVE` and always did. Only
