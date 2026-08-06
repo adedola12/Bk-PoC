@@ -39,11 +39,23 @@ const MODEL_BY_PROVIDER = {
 
 export const MODEL = MODEL_BY_PROVIDER[PROVIDER] ?? MODEL_BY_PROVIDER.anthropic;
 
-// USD per MTok for the D8 default model (input / output) — used only for the
-// run-record cost estimate shown in reports; update if pricing changes.
-// Bedrock is partner-priced and can differ from these first-party rates, so on
-// Bedrock treat the reported cost as indicative, not billing-accurate.
-const PRICE = { input: 3, output: 15 };
+/**
+ * USD per MTok (input / output) — used only for the run-record cost estimate
+ * shown in reports, never for billing.
+ *
+ * Keyed by model family and matched against the resolved model ID, because that
+ * ID is now configurable: a single hardcoded rate silently under-reports by
+ * ~1.7x the moment the model moves from Sonnet to Opus. Bedrock is
+ * partner-priced and its regional rates run slightly above these first-party
+ * list rates, so treat the figure as indicative.
+ */
+const PRICE_BY_FAMILY = [
+  [/opus/, { input: 5, output: 25 }],
+  [/sonnet/, { input: 3, output: 15 }],
+  [/haiku/, { input: 1, output: 5 }],
+];
+const priceFor = (modelId) =>
+  PRICE_BY_FAMILY.find(([re]) => re.test(modelId))?.[1] ?? { input: 3, output: 15 };
 
 // Lazy: ESM hoists imports above dotenv.config() in entrypoints, so the env
 // var may not exist at module-evaluation time. Trim guards stray whitespace
@@ -81,8 +93,9 @@ export async function callClaudeJSON({ system, messages, maxTokens = 1500, log, 
       });
       const latencyMs = Date.now() - started;
       const usage = res.usage || {};
+      const price = priceFor(MODEL);
       const costUsd =
-        ((usage.input_tokens || 0) * PRICE.input + (usage.output_tokens || 0) * PRICE.output) / 1e6;
+        ((usage.input_tokens || 0) * price.input + (usage.output_tokens || 0) * price.output) / 1e6;
       log?.({ kind: "ai_call", tag, provider: PROVIDER, model: MODEL, latencyMs, usage, costUsd });
 
       const text = res.content.find((b) => b.type === "text")?.text ?? "";
