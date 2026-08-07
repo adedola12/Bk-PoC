@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
-# Verify the LIVE deployment, end to end, without changing anything.
+# Verify the LIVE deployment, end to end.
 #
 #   ./deploy/06-verify-live.sh
 #
 # go-live.sh verifies as its last step, but only as part of a full deploy that
-# needs SSH and rebuilds the image. This is the standalone read-only version:
-# safe to run before a demo, from any machine with network access, as often as
-# you like. It creates nothing and calls no AWS API.
+# needs SSH and rebuilds the image. This is the standalone version: runnable
+# before a demo, from any machine with network access, as often as you like. It
+# calls no AWS API and provisions nothing.
 #
-# It covers two things the go-live checks cannot:
+# ⚠️ NOT read-only. Sections 1-6 only read, but section 7 POSTs to /api/emit,
+# which writes an emission run and upserts the price-missing todo queue. It
+# sends {"generate":false}, so no Stage 8 model calls are made and it costs no
+# inference — but it is a write against the live database. Run it against a
+# deployment you are willing to mutate.
+#
+# It covers three things the go-live checks cannot:
 #
 #   CORS         curl sends no Origin header, so every existing check passes
 #                even when CORS_ORIGINS is wrong — and then every page in the
@@ -18,6 +24,10 @@
 #                redeploy without rebuilding the client and every check here
 #                goes green while the app calls a host that no longer exists.
 #                This reads the API base back out of the published bundle.
+#   emission     routes/emit.js reads fixtures/, which lives ABOVE server/. An
+#                image built with server/ as its context omits the BK template
+#                and every emission 500s, while all the read-only checks stay
+#                green. Only actually emitting catches that.
 set -uo pipefail        # deliberately not -e: report every failure, not the first
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

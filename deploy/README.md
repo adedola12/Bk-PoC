@@ -3,9 +3,11 @@
 Migration off Render. Frontend to **S3 + CloudFront**, API to **EC2 + Docker**,
 database **untouched on MongoDB Atlas**.
 
-> **Current state: [`STATUS.md`](STATUS.md).** The stack is provisioned and the
-> API is healthy; one DNS record is outstanding. Check it yourself any time with
-> `./deploy/06-verify-live.sh` (read-only).
+> **Current state: [`STATUS.md`](STATUS.md).** The stack is provisioned, the API
+> is healthy, and DNS and TLS are live on both `api-bk.adlmstudio.com` and
+> `bk.adlmstudio.com`. Check it yourself any time with
+> `./deploy/06-verify-live.sh` — note that it is **not read-only**; its emission
+> check writes.
 
 ```
 Browser ──HTTPS──> CloudFront ──> S3 (static React build)
@@ -204,13 +206,19 @@ ssh ec2-user@<ip> 'cd /opt/bk && ./update.sh'          # API: pull + restart
 ./deploy/06-verify-live.sh
 ```
 
-Read-only and idempotent — run it before a demo, or any time you want to know
-whether the stack is actually up. It checks DNS, certificate trust, `/healthz`
-and the API routes, CORS, the frontend and its SPA fallback, and exits non-zero
-if anything is wrong.
+Idempotent — run it before a demo, or any time you want to know whether the
+stack is actually up. It checks DNS, certificate trust, `/healthz` and the API
+routes, CORS, the frontend and its SPA fallback, and emission, and exits
+non-zero if anything is wrong.
 
-Two of those are not covered by the `go-live.sh` verify step, and both fail
-silently in ways that look fine from the terminal:
+**It is not read-only.** Sections 1–6 only read, but section 7 posts to
+`/api/emit`, which writes an emission run and upserts the price-missing todo
+queue. It sends `{"generate":false}`, so there are no model calls and no
+inference cost — but it is a write against the live database. Run it only
+against a deployment you are willing to mutate.
+
+Three of those checks are not covered by the `go-live.sh` verify step, and all
+three fail silently in ways that look fine from the terminal:
 
 - **CORS.** `curl` sends no `Origin` header, so a wrong `CORS_ORIGINS` passes
   every plain-`curl` check and then breaks every page in the browser. This sends
@@ -221,6 +229,10 @@ silently in ways that look fine from the terminal:
   `API_DOMAIN` and redeploy without rebuilding the client, and every check goes
   green while the app calls a host that no longer exists. This reads the API
   base back out of the published bundle.
+- **Emission.** `routes/emit.js` reads `fixtures/`, which lives **above**
+  `server/`. An image built with `server/` as its Docker context omits the BK
+  template, so every emission 500s while all the read-only checks stay green.
+  Only actually emitting catches it — which is why this section writes.
 
 Then in the browser: load the CloudFront URL, **refresh on a nested route**
 (proves SPA fallback), upload a fixture, run extraction, download an emission.

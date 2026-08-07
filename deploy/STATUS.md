@@ -6,8 +6,11 @@ evaluation.
 **The DNS record that was blocking this deployment now exists, and the whole
 stack verifies green.** `./deploy/06-verify-live.sh` passes all six sections.
 
-Verify any of this yourself, at any time, with `./deploy/06-verify-live.sh` —
-read-only, creates nothing.
+Verify any of this yourself, at any time, with `./deploy/06-verify-live.sh`. It
+calls no AWS API and provisions nothing, but it is **not read-only**: section 7
+posts to `/api/emit`, writing an emission run and upserting the todo queue. It
+passes `{"generate":false}`, so no model calls and no inference cost — but run
+it only against a deployment you are willing to mutate.
 
 ## Resolved: `api-bk.adlmstudio.com` is live and certificated
 
