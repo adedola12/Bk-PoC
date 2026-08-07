@@ -3,7 +3,7 @@
 **Project:** AI-Powered Catalog Onboarding — Proof of Concept
 **Client:** BuildersKonnect (BK) · **Engineer of record:** Adedolapo Quasim, ADLM Studio
 **Build window:** 17–18 July 2026 (materials received 17-Jul; all five milestones complete 18-Jul; evaluation target 31-Jul-2026)
-**Repository:** github.com/adedola12/Bk-PoC · **Live:** client https://d3kbhx0i6234ut.cloudfront.net · API https://api-bk.adlmstudio.com
+**Repository:** github.com/adedola12/Bk-PoC · **Live:** client https://bk.adlmstudio.com · API https://api-bk.adlmstudio.com
 
 ---
 

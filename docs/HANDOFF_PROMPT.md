@@ -22,8 +22,8 @@ of record; I ratify decisions. Evaluation day with the client is **31-Jul-2026**
   (100% post-Stage-5) — final only after my ground-truth verification.
 - 57/57 Vitest tests green (`cd server && npx vitest run`); client builds clean.
 - Deployed on AWS (`eu-west-1`, account `065634457992`) since 30-Jul-2026, after the Render
-  account was suspended for non-payment: client `https://d3kbhx0i6234ut.cloudfront.net`
-  (S3 + CloudFront, `VITE_API_BASE` inlined at build time), API
+  account was suspended for non-payment: client `https://bk.adlmstudio.com`
+  (S3 + CloudFront behind an ACM alias, `VITE_API_BASE` inlined at build time), API
   `https://api-bk.adlmstudio.com` (Docker on EC2 `t3.small`, Caddy terminating TLS; secrets in
   SSM Parameter Store; CORS normalizes origins). Atlas untouched by the migration. Deploy with
   `deploy/go-live.sh`, or `deploy/05-deploy-via-ssm.sh` from a machine with no SSH or Docker.
