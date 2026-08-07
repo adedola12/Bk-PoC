@@ -6,8 +6,11 @@ evaluation.
 **The DNS record that was blocking this deployment now exists, and the whole
 stack verifies green.** `./deploy/06-verify-live.sh` passes all six sections.
 
-Verify any of this yourself, at any time, with `./deploy/06-verify-live.sh` —
-read-only, creates nothing.
+Verify any of this yourself, at any time, with `./deploy/06-verify-live.sh`. It
+calls no AWS API and provisions nothing, but it is **not read-only**: section 7
+posts to `/api/emit`, writing an emission run and upserting the todo queue. It
+passes `{"generate":false}`, so no model calls and no inference cost — but run
+it only against a deployment you are willing to mutate.
 
 ## Resolved: `api-bk.adlmstudio.com` is live and certificated
 
@@ -62,7 +65,7 @@ All six sections of `06-verify-live.sh` pass.
 | Bundle API base | correct | `index-DXH5tPCG.js` calls `api-bk.adlmstudio.com` |
 | ECR image | pushed | `bk-ingest-api:latest` |
 | Billing alarm | `OK` | `bk-ingest-estimated-charges-over-100usd`, $100, us-east-1 |
-| AI provider | Bedrock, via instance role | `/healthz` → `eu.anthropic.claude-opus-4-5-20251101-v1:0`, eu-west-1 |
+| AI provider | Bedrock, via instance role | `/healthz` → `eu.anthropic.claude-sonnet-4-6`, eu-west-1 |
 | SSM access | online | `aws ssm start-session --target i-0949cc6784a39c72c` |
 
 CORS had never been exercised from a browser origin before — every earlier check
@@ -170,12 +173,13 @@ aws bedrock-runtime invoke-model --region eu-west-1 \
 ```
 
 When one answers, switching is one variable — set `BEDROCK_MODEL_ID` in
-`deploy/docker-compose.yml` and restart the API. The running config is on **Opus 4.5** — the most capable model this account
-can actually call — so an entitlement that is accepted but not served cannot
-take the demo down.
+`deploy/docker-compose.yml` and restart the API. The running config is on **Sonnet 4.6**, chosen for cost: $3/$15 per MTok
+against Opus 4.5's $5/$25, roughly 40% cheaper per token on the same workload.
+Opus 4.5 and Opus 4.6 are both enabled and one variable away if the capability
+is wanted.
 
-`claude-opus-4-7` remains unsubscribed. Enabled and callable today: **Opus 4.5
-(in use)**, Opus 4.6, Sonnet 4.6, Sonnet 4.5, Haiku 4.5.
+`claude-opus-4-7` remains unsubscribed. Enabled and callable today: **Sonnet
+4.6 (in use)**, Opus 4.6, Opus 4.5, Sonnet 4.5, Haiku 4.5.
 
 Note that `aws bedrock list-foundation-models` lists every model in the region
 regardless of entitlement, so it shows Opus 5 as `ACTIVE` and always did. Only
