@@ -127,6 +127,28 @@ Two Bedrock facts that cost real time to rediscover:
 The newer `AnthropicBedrockMantle` client is **not** used — its endpoint 404s
 for this account.
 
+The model in use is **Opus 4.5**, on the EU inference profile
+`eu.anthropic.claude-opus-4-5-20251101-v1:0`. Confirmed by a live call from
+inside the running container, not just by reading config: the service returned
+`{"status":"ready"}` for a JSON prompt, and `/healthz` reports the same ID
+through Caddy on `https://api-bk.adlmstudio.com/healthz`.
+
+### Redeploying by hand: sync `/opt/bk/docker-compose.yml`
+
+`/opt/bk/docker-compose.yml` is a **copy**, not a symlink into the checkout at
+`/opt/bk/src`. `05-deploy-via-ssm.sh` refreshes it from Parameter Store, so the
+scripted path is fine — but a hand-rolled redeploy that only rebuilds the image
+leaves the old compose file in place, and the container silently keeps the
+previous model, region and CORS settings while every check goes green. If you
+rebuild manually, `cp /opt/bk/src/deploy/docker-compose.yml /opt/bk/` first,
+then confirm with `docker exec bk-api-1 printenv BEDROCK_MODEL_ID`.
+
+Note also that the API's port 8080 is **not published to the host** — Caddy
+reaches it over the compose network. `curl 127.0.0.1:8080/healthz` on the box
+fails with connection refused even when the API is perfectly healthy; use
+`docker exec bk-api-1 node -e "fetch('http://127.0.0.1:8080/healthz')…"` or the
+public URL.
+
 ## Still outstanding
 
 **Three newer models are subscribed but none are callable.** Marketplace
