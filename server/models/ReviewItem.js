@@ -22,6 +22,7 @@ const reviewItemSchema = new mongoose.Schema(
         "triage_uncertain",
         "fact_check_failed",
         "unpaired_media",
+        "attribute_key_rewritten",
       ],
       required: true,
     },

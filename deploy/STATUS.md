@@ -65,7 +65,7 @@ All six sections of `06-verify-live.sh` pass.
 | Bundle API base | correct | `index-DXH5tPCG.js` calls `api-bk.adlmstudio.com` |
 | ECR image | pushed | `bk-ingest-api:latest` |
 | Billing alarm | `OK` | `bk-ingest-estimated-charges-over-100usd`, $100, us-east-1 |
-| AI provider | Bedrock, via instance role | `/healthz` → `eu.anthropic.claude-sonnet-4-6`, eu-west-1 |
+| AI provider | Bedrock, via instance role | `/healthz` → `eu.anthropic.claude-opus-4-5-20251101-v1:0`, eu-west-1 |
 | SSM access | online | `aws ssm start-session --target i-0949cc6784a39c72c` |
 
 CORS had never been exercised from a browser origin before — every earlier check

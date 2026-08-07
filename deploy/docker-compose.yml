@@ -46,7 +46,10 @@ services:
       # and a stale key silently winning over IAM is the failure this avoids.
       - AI_PROVIDER=${AI_PROVIDER:-bedrock}
       - AWS_REGION=${AWS_REGION:-eu-west-1}
-      - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID:-eu.anthropic.claude-sonnet-4-6}
+      # Opus 4.5 via the EU cross-region inference profile. A bare
+      # anthropic.* id is rejected ("on-demand throughput isn't supported"),
+      # so the eu. prefix and the -v1:0 suffix are both load-bearing.
+      - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID:-eu.anthropic.claude-opus-4-5-20251101-v1:0}
     # runs/ is ephemeral by design, exactly as it was on Render: artifacts must
     # survive the emit -> download round trip, not a restart. A named volume
     # keeps them across `docker compose up -d` redeploys, which is strictly

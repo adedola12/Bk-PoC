@@ -30,11 +30,12 @@ const AWS_REGION = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "
  * on-demand `anthropic.claude-*` call is rejected with "Invocation ... with
  * on-demand throughput isn't supported". They must be addressed through a
  * cross-region INFERENCE PROFILE, which is the same ID behind a region prefix:
- * `eu.` (EU regions) or `global.`. Hence `eu.anthropic.claude-sonnet-4-6`.
+ * `eu.` (EU regions) or `global.`. Hence the `eu.` prefix below; the trailing
+ * `-v1:0` version suffix is part of the ID and is equally required.
  */
 const MODEL_BY_PROVIDER = {
   anthropic: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6", // D8 default
-  bedrock: process.env.BEDROCK_MODEL_ID || "eu.anthropic.claude-sonnet-4-6",
+  bedrock: process.env.BEDROCK_MODEL_ID || "eu.anthropic.claude-opus-4-5-20251101-v1:0",
 };
 
 export const MODEL = MODEL_BY_PROVIDER[PROVIDER] ?? MODEL_BY_PROVIDER.anthropic;

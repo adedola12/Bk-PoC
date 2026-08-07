@@ -12,6 +12,7 @@ import { expandVariants } from "../stages/stage6_variants.js";
 import { resolveTaxonomyIds } from "../services/ids.js";
 import { TodoItem } from "../models/TodoItem.js";
 import { createRun, resolveRunPath } from "../services/runs.js";
+import { sanitizeMapKeys } from "../services/mapKeys.js";
 import { bulkExtract } from "../stages/bulk_extract.js";
 import { detectAnomalies } from "../eval/injector.js";
 
@@ -102,13 +103,22 @@ router.post("/:uploadId/extract", async (req, res, next) => {
 
     const saved = [];
     for (const ipr of iprs) {
+      // Attribute keys come from the extractor, so they can carry "." or a
+      // leading "$" — both illegal as MongoDB field names, and enough to fail
+      // the whole insert. Repair them here, at the one place IPRs are written,
+      // so every extractor path is covered.
+      const attrs = sanitizeMapKeys(ipr.attributes);
+      const logi = sanitizeMapKeys(ipr.logistics);
+      const comp = sanitizeMapKeys(ipr.compliance);
+      const rewrites = [...attrs.rewrites, ...logi.rewrites, ...comp.rewrites];
+
       const doc = await IPR.create({
         runId: run.runId,
         upload: upload._id,
         identity: ipr.identity,
-        attributes: ipr.attributes || {},
-        logistics: ipr.logistics || {},
-        compliance: ipr.compliance || {},
+        attributes: attrs.map,
+        logistics: logi.map,
+        compliance: comp.map,
         mediaRefs: ipr.mediaRefs || [],
         templateRow: ipr.templateRow || null,
         taxonomyPath: ipr.taxonomyPath ?? null,
@@ -117,6 +127,19 @@ router.post("/:uploadId/extract", async (req, res, next) => {
         variantLabel: ipr.variantLabel ?? null,
         variantOfCode: ipr.variantOfCode ?? null,
       });
+      // §6.1 — a repaired key is a signal the extractor mis-read a spec row,
+      // so surface it for review rather than quietly accepting the rewrite.
+      if (rewrites.length) {
+        run.log({ kind: "attribute_key_rewritten", file: upload.originalName, rewrites });
+        await ReviewItem.create({
+          runId: run.runId,
+          ipr: doc._id,
+          upload: upload._id,
+          fieldKey: rewrites[0].from,
+          reason: "attribute_key_rewritten",
+          detail: rewrites.map((r) => `"${r.from}" → "${r.to}"`).join("; "),
+        });
+      }
       // §6.1 — every flag becomes a review item, never silently dropped
       for (const f of ipr.flags || []) {
         await ReviewItem.create({
