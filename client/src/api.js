@@ -53,6 +53,32 @@ export const addManualPrice = (body) => api.post("/prices/manual", body).then((r
 export const fetchLatestReport = () => api.get("/reports/latest").then((res) => res.data);
 
 /** Server { error } shape → readable message (ADLM error convention). */
-export const errMsg = (err, fallback) => err.response?.data?.error || fallback;
+/**
+ * Turn an axios failure into something a human can act on.
+ *
+ * This used to be `err.response?.data?.error || fallback`, which is fine when
+ * the API answered and said why. When the request never completed at all —
+ * connection dropped mid-upload, blocked by an extension or proxy, DNS, CORS —
+ * there IS no response, so it fell through to the bare fallback: "Upload
+ * failed", with the actual cause (err.message / err.code) discarded. That left
+ * no way to tell a 16MB upload dying in transit apart from an API that is down.
+ */
+export const errMsg = (err, fallback) => {
+  const fromServer = err?.response?.data?.error;
+  if (fromServer) return fromServer;
+
+  // Answered, but with no error body — the status is the useful part.
+  if (err?.response) {
+    return `${fallback} — HTTP ${err.response.status} ${err.response.statusText || ""}`.trim();
+  }
+
+  // Sent, never answered. err.message is all we have; keep it.
+  if (err?.request) {
+    const detail = [err.message, err.code].filter(Boolean).join(" · ");
+    return `${fallback} — no response from the API (${detail || "connection failed"})`;
+  }
+
+  return err?.message ? `${fallback} — ${err.message}` : fallback;
+};
 
 export default api;
