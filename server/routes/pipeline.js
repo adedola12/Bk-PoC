@@ -100,15 +100,38 @@ router.post("/:uploadId/extract", async (req, res, next) => {
       iprs.push(...expandVariants(ipr));
     }
 
+    /* Mongoose Map keys cannot contain "." and cannot start with "$".
+       attributes/logistics/compliance are all Maps keyed by whatever the
+       extractor names a field, and the Bosch spec tables produced one called
+       literally "3.7" — so IPR.create threw "IPR validation failed" and took
+       the whole run down with it: 18 products and ~2 minutes of AI work lost
+       to one malformed key, surfaced only as a 500 after the request had
+       already been running for two minutes.
+
+       Rename the key rather than lose the document. The rename is written to
+       the run log — this pipeline does not make silent edits, and the original
+       name is the only place the extractor's wording survives. */
+    const safeMapKeys = (obj, field) => {
+      if (!obj || typeof obj !== "object") return {};
+      const out = {};
+      for (const [rawKey, value] of Object.entries(obj)) {
+        let key = String(rawKey).replace(/\./g, "_");
+        if (key.startsWith("$")) key = `_${key.slice(1)}`;
+        if (key !== rawKey) run.log({ kind: "map_key_renamed", field, from: rawKey, to: key });
+        out[key] = value;
+      }
+      return out;
+    };
+
     const saved = [];
     for (const ipr of iprs) {
       const doc = await IPR.create({
         runId: run.runId,
         upload: upload._id,
         identity: ipr.identity,
-        attributes: ipr.attributes || {},
-        logistics: ipr.logistics || {},
-        compliance: ipr.compliance || {},
+        attributes: safeMapKeys(ipr.attributes, "attributes"),
+        logistics: safeMapKeys(ipr.logistics, "logistics"),
+        compliance: safeMapKeys(ipr.compliance, "compliance"),
         mediaRefs: ipr.mediaRefs || [],
         templateRow: ipr.templateRow || null,
         taxonomyPath: ipr.taxonomyPath ?? null,
