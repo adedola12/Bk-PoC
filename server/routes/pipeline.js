@@ -185,6 +185,32 @@ router.post("/:uploadId/extract", async (req, res, next) => {
   }
 });
 
+/* ─── GET /sources — the extracted documents, with a row count each.
+   Feeds the picker on step 3: choose which processed document to emit. Derived
+   from the IPRs themselves, not the upload ledger, so a file that was uploaded
+   but never extracted does not appear as something you could emit. ─── */
+router.get("/sources", async (req, res, next) => {
+  try {
+    const rows = await IPR.aggregate([
+      { $group: { _id: "$upload", count: { $sum: 1 }, lastExtract: { $max: "$createdAt" } } },
+      { $lookup: { from: "uploadledgers", localField: "_id", foreignField: "_id", as: "u" } },
+      {
+        $project: {
+          _id: 0,
+          uploadId: "$_id",
+          count: 1,
+          lastExtract: 1,
+          originalName: { $ifNull: [{ $arrayElemAt: ["$u.originalName", 0] }, "(source removed)"] },
+        },
+      },
+      { $sort: { lastExtract: -1 } },
+    ]);
+    res.json(rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
 /* ─── GET /iprs — extracted records + latest ledger price + cover image.
    `?uploads=id,id` narrows to those source files so a walkthrough sees only
    what it just extracted; omitted returns the whole store as before. ─── */

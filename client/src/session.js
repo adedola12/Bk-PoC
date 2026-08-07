@@ -20,9 +20,19 @@ export function extractedUploads() {
   }
 }
 
+/** The most recently extracted upload, or "" — what step 3 opens on. */
+export function lastExtracted() {
+  const all = extractedUploads();
+  return all.length ? all[all.length - 1] : "";
+}
+
 export function rememberExtracted(uploadId) {
   if (!uploadId) return;
-  const next = [...new Set([...extractedUploads(), String(uploadId)])];
+  const id = String(uploadId);
+  // Drop any earlier entry first, then append: a Set spread would have kept an
+  // already-present id at its original index, so re-extracting the same file
+  // would not have made it the most recent and step 3 would open on the wrong one.
+  const next = [...extractedUploads().filter((x) => x !== id), id];
   try {
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {

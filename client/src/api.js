@@ -28,6 +28,9 @@ export const uploadFromUrl = (url) => api.post("/uploads/url", { url }).then((re
 
 export const extractUpload = (id) => api.post(`/pipeline/${id}/extract`).then((res) => res.data);
 
+// the extracted documents, for the step-3 picker: [{uploadId, originalName, count}]
+export const fetchSources = () => api.get("/pipeline/sources").then((res) => res.data);
+
 // uploadIds scopes both to specific source files; empty/omitted = whole store
 export const fetchIprs = (uploadIds = []) =>
   api

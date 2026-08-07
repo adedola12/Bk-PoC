@@ -2,8 +2,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { FiDownload, FiBox, FiTruck, FiTag, FiSearch } from "react-icons/fi";
-import { fetchIprs, runEmission, emissionDownloadUrl, errMsg } from "../api.js";
-import { extractedUploads } from "../session.js";
+import { fetchIprs, fetchSources, runEmission, emissionDownloadUrl, errMsg } from "../api.js";
+import { lastExtracted } from "../session.js";
 
 const DISPOSITION = {
   PASS: "bg-emerald-100 text-emerald-800",
@@ -19,20 +19,35 @@ export default function Products() {
   const [emission, setEmission] = React.useState(null);
   const [query, setQuery] = React.useState("");
 
-  // Files extracted in this walkthrough. Default to showing only those — the
-  // IPR store accumulates across every run ever made, so an unscoped page
-  // buries the one file you just processed. Falls back to the full store when
-  // this session has extracted nothing yet.
-  const session = React.useMemo(() => extractedUploads(), []);
-  const [scoped, setScoped] = React.useState(session.length > 0);
+  // Which processed document is in view. "" = All. Defaults to whatever step 2
+  // last extracted, so pressing play there lands you on those products rather
+  // than on the whole accumulated store.
+  const [sources, setSources] = React.useState([]);
+  const [selected, setSelected] = React.useState(lastExtracted());
+
+  // The picker lists every extracted document, whatever is selected, so it is
+  // loaded separately from the (possibly scoped) product list.
+  React.useEffect(() => {
+    fetchSources()
+      .then((s) => {
+        const list = Array.isArray(s) ? s : [];
+        setSources(list);
+        // A remembered upload that has since been deleted or re-extracted would
+        // otherwise select a document that is not in the list — show All.
+        setSelected((cur) => (cur && list.some((x) => x.uploadId === cur) ? cur : ""));
+      })
+      .catch(() => setSources([]));
+  }, []);
+
+  const scope = selected ? [selected] : [];
 
   const load = React.useCallback(() => {
     setLoading(true);
-    fetchIprs(scoped ? session : [])
+    fetchIprs(selected ? [selected] : [])
       .then((i) => setIprs(Array.isArray(i) ? i : []))
       .catch((err) => toast.error(errMsg(err, "Could not load products")))
       .finally(() => setLoading(false));
-  }, [scoped, session]);
+  }, [selected]);
 
   React.useEffect(() => {
     load();
@@ -41,7 +56,7 @@ export default function Products() {
   const emit = async () => {
     setBusy("emit");
     try {
-      const r = await runEmission(scoped ? session : []);
+      const r = await runEmission(scope);
       setEmission(r);
       toast.success(`Emitted ${r.emittedRows} rows — zero-touch ${(r.zeroTouch * 100).toFixed(0)}%`);
       load();
@@ -52,7 +67,12 @@ export default function Products() {
     }
   };
 
-  if (loading) return <div className="h-24 animate-pulse rounded-lg bg-slate-200/70" />;
+  const selectedName = sources.find((s) => s.uploadId === selected)?.originalName;
+  const totalRows = sources.reduce((n, s) => n + s.count, 0);
+
+  // No early return on `loading`: the toolbar carries the document picker, and
+  // blanking the page on every selection change would take the control you just
+  // used away from you. Only the grid shows a loading state.
 
   // search across name, brand, SKU, color, category and latest price
   const q = query.trim().toLowerCase();
@@ -85,9 +105,9 @@ export default function Products() {
             <p className="text-xs text-slate-600">
               {q
                 ? `${shown.length} of ${iprs.length} rows match "${query}"`
-                : scoped
-                ? `${iprs.length} row(s) from the ${session.length} file(s) you extracted.`
-                : `${iprs.length} extracted rows in the IPR store.`}
+                : selectedName
+                ? `${iprs.length} row(s) from ${selectedName} — this is what will be emitted.`
+                : `All documents — ${iprs.length} row(s) across ${sources.length} source(s).`}
             </p>
           </div>
           <label className="relative" aria-label="Search products">
@@ -99,24 +119,49 @@ export default function Products() {
               className="w-60 rounded-md border border-slate-300 bg-white py-2 pl-8 pr-3 text-sm"
             />
           </label>
-          {session.length > 0 && (
-            <button
-              onClick={() => setScoped((s) => !s)}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold"
-              title={scoped ? "Include everything extracted previously" : "Show only this session's files"}
-            >
-              {scoped ? "Showing this session · show all" : "Showing all · show this session"}
-            </button>
-          )}
           <button
             onClick={emit}
-            disabled={busy === "emit" || !iprs.length}
+            disabled={busy === "emit" || loading || !iprs.length}
             className="flex items-center gap-2 rounded-md bg-bk-gold px-4 py-2 text-sm font-bold text-bk-navy-deep transition-colors duration-200 hover:bg-bk-gold-soft disabled:opacity-50"
           >
             <FiDownload className="h-4 w-4" aria-hidden />
             {busy === "emit" ? "Emitting…" : "Emit BK template"}
           </button>
         </div>
+
+        {/* Which processed document to show and emit. Sits in the sticky bar so
+            it stays with the Emit button — the two decisions are the same one. */}
+        {sources.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              Emit
+            </span>
+            <button
+              onClick={() => setSelected("")}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${
+                selected === ""
+                  ? "border-bk-navy bg-bk-navy text-white"
+                  : "border-slate-300 bg-white text-slate-700 hover:border-bk-gold"
+              }`}
+            >
+              All ({totalRows})
+            </button>
+            {sources.map((s) => (
+              <button
+                key={s.uploadId}
+                onClick={() => setSelected(s.uploadId)}
+                title={s.originalName}
+                className={`max-w-[18rem] truncate rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${
+                  selected === s.uploadId
+                    ? "border-bk-navy bg-bk-navy text-white"
+                    : "border-slate-300 bg-white text-slate-700 hover:border-bk-gold"
+                }`}
+              >
+                {s.originalName} ({s.count})
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {emission?.files?.length > 0 && (
@@ -136,11 +181,28 @@ export default function Products() {
       )}
 
       {/* marketplace-style card grid (BK storefront format) */}
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {shown.slice(0, 60).map((ipr, idx) => (
-          <ProductCard key={ipr._id} ipr={ipr} idx={idx} />
-        ))}
-      </div>
+      {loading ? (
+        <div
+          className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          aria-busy="true"
+          aria-label="Loading products"
+        >
+          {[1, 2, 3, 4].map((n) => (
+            <div key={n} className="h-72 animate-pulse rounded-lg bg-slate-200/70" />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {shown.slice(0, 60).map((ipr, idx) => (
+            <ProductCard key={ipr._id} ipr={ipr} idx={idx} />
+          ))}
+        </div>
+      )}
+      {!loading && !iprs.length && (
+        <p className="mt-6 rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
+          Nothing extracted yet for this selection — run extraction in step 2, or pick another document above.
+        </p>
+      )}
       {shown.length > 60 && <p className="mt-3 text-xs text-slate-400">Showing first 60 of {shown.length}.</p>}
       {q && !shown.length && (
         <p className="mt-6 rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
