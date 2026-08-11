@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiUploadCloud, FiCheckSquare, FiBox } from "react-icons/fi";
+import { FiUploadCloud, FiCheckSquare, FiBox, FiMenu, FiX } from "react-icons/fi";
 
 /* ─────────── navigation — the three demo steps.
    The review queue, todo list, price comparison and run report stay routed
@@ -43,10 +43,71 @@ export default function App() {
     year: "numeric",
   });
 
+  // The same sidebar on a phone, as a drawer. Closed by default so it does not
+  // cover the page, opened from the header.
+  const [navOpen, setNavOpen] = React.useState(false);
+
+  // Close on navigation, or the drawer stays over the page you just opened.
+  React.useEffect(() => setNavOpen(false), [location.pathname]);
+
+  // Escape closes it — a drawer with no visible way out is a trap on a phone.
+  React.useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && setNavOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Below `sm` the sidebar slides; from `sm` up it is a static column and must
+  // carry no transform at all. Driven from JS and applied inline because both
+  // Tailwind's translate utilities and a plain stylesheet rule were losing to
+  // the utility layer here — the panel stayed at -100% while the backdrop
+  // showed, so the menu button looked dead. An inline style cannot be
+  // outranked, which is what this needs to be.
+  const [isMobile, setIsMobile] = React.useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches
+  );
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const onChange = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  const drawerStyle = isMobile
+    ? { transform: navOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 200ms ease-out" }
+    : undefined;
+
   return (
     <div className="flex min-h-screen">
-      {/* ─────────── sidebar ─────────── */}
-      <aside className="hidden w-60 shrink-0 flex-col bg-bk-navy-deep text-white sm:flex">
+      {/* Backdrop: only below sm, only while open. */}
+      {navOpen && (
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={() => setNavOpen(false)}
+          className="fixed inset-0 z-30 bg-bk-navy-deep/60 backdrop-blur-sm sm:hidden"
+        />
+      )}
+
+      {/* ─────────── sidebar ───────────
+          Static from sm up. Below that it is the same panel, slid off-canvas
+          and brought in by the header button — hiding it outright left a phone
+          with no navigation at all. */}
+      <aside
+        data-open={navOpen}
+        style={drawerStyle}
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col bg-bk-navy-deep text-white sm:static sm:z-auto sm:w-60 ${
+          navOpen ? "shadow-2xl" : ""
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => setNavOpen(false)}
+          aria-label="Close menu"
+          className="absolute right-3 top-4 rounded-md p-1.5 text-white/70 transition-colors duration-200 hover:bg-white/10 hover:text-white sm:hidden"
+        >
+          <FiX className="h-5 w-5" aria-hidden />
+        </button>
         <div className="flex items-center gap-2 px-5 py-5">
           <span className="flex h-9 w-9 items-center justify-center rounded-md bg-bk-gold font-extrabold text-bk-navy-deep">
             BK
@@ -94,8 +155,17 @@ export default function App() {
         <header className="border-b border-slate-200 bg-white">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
             <div className="flex min-w-0 items-center gap-2.5">
-              {/* The sidebar carries the brand from `sm` up; below that it is
-                  hidden, so without this the app is unbranded on a phone. */}
+              {/* Opens the sidebar below sm. Sized past the 44px touch minimum
+                  and placed first, where a thumb reaches on a phone. */}
+              <button
+                type="button"
+                onClick={() => setNavOpen(true)}
+                aria-label="Open menu"
+                aria-expanded={navOpen}
+                className="-ml-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-bk-navy transition-colors duration-200 hover:bg-slate-100 sm:hidden"
+              >
+                <FiMenu className="h-6 w-6" aria-hidden />
+              </button>
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-bk-gold text-sm font-extrabold text-bk-navy-deep sm:hidden">
                 BK
               </span>
@@ -117,44 +187,11 @@ export default function App() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          /* pb-28 on mobile clears the fixed step bar below; without it the
-             last row of any page sits underneath it and cannot be reached. */
-          className="mx-auto max-w-6xl px-4 pb-28 pt-8 sm:px-6 sm:pb-8"
+          className="mx-auto max-w-6xl px-4 py-8 sm:px-6"
         >
           <Outlet />
         </motion.main>
       </div>
-
-      {/* ─────────── mobile step bar ───────────
-          The sidebar is `sm:flex`, so below 640px there was NO navigation at
-          all — on a phone you could not move between the three steps. Three
-          fixed tabs instead: always visible, thumb-height, same numbering. */}
-      <nav
-        aria-label="Steps"
-        className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-bk-navy-deep pb-[env(safe-area-inset-bottom)] sm:hidden"
-      >
-        {NAV.map(({ to, step, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex flex-1 flex-col items-center gap-1 px-1 py-2.5 text-[11px] font-medium transition-colors duration-200 ${
-                isActive ? "text-bk-gold-soft" : "text-white/60"
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <span className="flex items-center gap-1.5">
-                  <StepBadge step={step} isActive={isActive} className="h-4 w-4 text-[10px]" />
-                  <Icon className="h-4 w-4" aria-hidden />
-                </span>
-                <span className="truncate">{label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
 
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar newestOnTop />
     </div>
