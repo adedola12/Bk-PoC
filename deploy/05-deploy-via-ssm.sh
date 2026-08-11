@@ -210,11 +210,21 @@ aws ssm get-command-invocation --region "$AWS_REGION" \
   --command-id "$CMD_ID" --instance-id "$EC2_INSTANCE_ID" --output json \
 | python3 -c '
 import json,sys
+# A Windows console is cp1252, and the REMOTE log body carries the box-drawing
+# and check characters the on-instance script prints. Encoding those raised
+# UnicodeEncodeError mid-print and destroyed the deploy output — the run looked
+# broken while the deploy had in fact succeeded, and the real status had to be
+# recovered by hand from ssm list-command-invocations. Replace what the console
+# cannot represent rather than losing the whole tail over it.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 d = json.load(sys.stdin)
 for label, key in (("stdout","StandardOutputContent"), ("stderr","StandardErrorContent")):
     body = (d.get(key) or "").strip()
     if body:
-        print("─── %s (tail) ───" % label)
+        print("--- %s (tail) ---" % label)
         print("\n".join(body.splitlines()[-25:]))
 ' || true
 
@@ -222,7 +232,24 @@ for label, key in (("stdout","StandardOutputContent"), ("stderr","StandardErrorC
 
 # ───────────────── 4. verify from outside ─────────────────
 step "4/4  verify"
-RESOLVED="$(getent hosts "$API_DOMAIN" 2>/dev/null | awk '{print $1}' | head -1 || true)"
+# getent does not exist on Windows/MSYS, so this always resolved to nothing and
+# every deploy from a Windows box ended by claiming DNS was missing — a false
+# alarm on an otherwise successful deploy. Same fallback chain as 06-verify-live.
+resolve_a() {
+  if command -v getent >/dev/null 2>&1; then
+    getent hosts "$1" 2>/dev/null | awk '{print $1}' | head -1
+  elif command -v dig >/dev/null 2>&1; then
+    dig +short "$1" A 2>/dev/null | grep -E '^[0-9.]+$' | head -1
+  elif command -v nslookup >/dev/null 2>&1; then
+    # nslookup prints the RESOLVER's own address first, then the answer after
+    # "Name:" — taking the first Address: yields the router, not the record.
+    nslookup "$1" 2>/dev/null \
+      | awk '/^Name:/{ans=1} ans && /Address(es)?:/{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+(\.[0-9]+){3}$/){print $i; exit}}'
+  elif command -v ping >/dev/null 2>&1; then
+    ping -n 1 -w 1000 "$1" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1
+  fi
+}
+RESOLVED="$(resolve_a "$API_DOMAIN" || true)"
 if [ "$RESOLVED" != "${ELASTIC_IP:-}" ]; then
   cat <<EOF
   The stack is running, but ${API_DOMAIN} resolves to '${RESOLVED:-nothing}'
