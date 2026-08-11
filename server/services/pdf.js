@@ -105,7 +105,50 @@ export async function rasterizePages(filePath, pageNumbers, { scale = 2 } = {}) 
  * take the head of the list.
  */
 export async function extractEmbeddedImages(filePath, { pages = null, minArea = 30000 } = {}) {
-  const { getDocument, OPS } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // One placement per drawing; callers wanting "the images" want them once.
+  const placed = await extractPlacedImages(filePath, { pages, minArea, minPlacedArea: 0 });
+  const byName = new Map();
+  for (const p of placed) {
+    const key = `${p.page}:${p.name}`;
+    if (!byName.has(key)) byName.set(key, { page: p.page, name: p.name, width: p.width, height: p.height, buffer: p.buffer });
+  }
+  return [...byName.values()].sort((a, b) => b.width * b.height - a.width * a.height);
+}
+
+/**
+ * The same images, but each PLACEMENT located on its page.
+ *
+ * Knowing an image exists is not enough to say which product it belongs to.
+ * The Bosch quick-reference guide puts ~99 products on two pages, so mapping
+ * products to images by page number alone gave every product on the page the
+ * same photo — one image for ninety-nine products, which is what the client
+ * saw. Position is the missing signal: with it, a product can be matched to
+ * the image nearest its own code (see stages/media_from_pdf.js).
+ *
+ * Coordinates are PDF user space with a bottom-left origin — the same frame
+ * extractTextPositions reports — so image rects and text anchors are directly
+ * comparable without either caller converting.
+ *
+ * Getting there means tracking the CTM through the operator list by hand:
+ * pdfjs reports WHAT is drawn, never WHERE. save/restore/transform maintain
+ * it, and form XObjects push their own matrix — handling those moved Bosch
+ * from 58 correctly-located placements on page one to 150 across the file.
+ * Anything still landing outside the MediaBox is a construct this walk does
+ * not model (tiling patterns, soft-mask groups) and is dropped rather than
+ * trusted, since a wrong position would pull the wrong photo onto a product.
+ *
+ * `minPlacedArea` is in square points and filters by how large the image is
+ * ON THE PAGE, which `minArea` (source pixels) cannot see: a 600x500 source
+ * bitmap placed as a 12pt bullet is decoration, not a product shot.
+ *
+ * @returns {Promise<Array<{page:number, name:string, width:number, height:number,
+ *   buffer:Buffer, x:number, y:number, w:number, h:number}>>}
+ */
+export async function extractPlacedImages(
+  filePath,
+  { pages = null, minArea = 30000, minPlacedArea = 2000 } = {}
+) {
+  const { getDocument, OPS, Util } = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const sharp = (await import("sharp")).default;
 
   const toPng = async (img) => {
@@ -128,32 +171,75 @@ export async function extractEmbeddedImages(filePath, { pages = null, minArea = 
   for (const p of wanted) {
     if (p < 1 || p > doc.numPages) continue;
     const page = await doc.getPage(p);
+    const [vx0, vy0, vx1, vy1] = page.view; // MediaBox, user space
     const ops = await page.getOperatorList();
-    const seen = new Set();
+
+    // Walk the operator list keeping the current transform, collecting a rect
+    // per paint. Decoding is deferred so a repeated image decodes once.
+    const identity = [1, 0, 0, 1, 0, 0];
+    let ctm = identity.slice();
+    const stack = [];
+    const hits = [];
     for (let i = 0; i < ops.fnArray.length; i++) {
-      if (ops.fnArray[i] !== OPS.paintImageXObject && ops.fnArray[i] !== OPS.paintJpegXObject) continue;
-      const name = ops.argsArray[i][0];
-      if (typeof name !== "string" || seen.has(name)) continue;
-      seen.add(name);
-      let img;
-      try {
-        img = await new Promise((resolve) => page.objs.get(name, resolve));
-      } catch {
-        continue; // object not resolvable — skip rather than fail the document
+      const fn = ops.fnArray[i];
+      const args = ops.argsArray[i];
+      if (fn === OPS.save) stack.push(ctm.slice());
+      else if (fn === OPS.restore) ctm = stack.pop() ?? identity.slice();
+      else if (fn === OPS.transform) ctm = Util.transform(ctm, args);
+      else if (fn === OPS.paintFormXObjectBegin) {
+        stack.push(ctm.slice());
+        ctm = Util.transform(ctm, args[0]);
+      } else if (fn === OPS.paintFormXObjectEnd) ctm = stack.pop() ?? identity.slice();
+      else if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject) {
+        const name = args[0];
+        if (typeof name !== "string") continue;
+        // an image occupies the unit square mapped through the CTM
+        const pts = [[0, 0], [1, 0], [0, 1], [1, 1]].map((pt) => Util.applyTransform(pt, ctm));
+        const xs = pts.map((q) => q[0]);
+        const ys = pts.map((q) => q[1]);
+        const x = Math.min(...xs);
+        const y = Math.min(...ys);
+        const w = Math.max(...xs) - x;
+        const h = Math.max(...ys) - y;
+        const pad = 5; // rounding slack at the page edge
+        const inBounds = x >= vx0 - pad && y >= vy0 - pad && x + w <= vx1 + pad && y + h <= vy1 + pad;
+        // A rect outside the MediaBox means this walk did not model something
+        // (tiling pattern, soft-mask group) and the POSITION is not to be
+        // trusted. The image still is: it is returned unplaced so callers can
+        // fall back to ranking it, rather than losing it outright — dropping
+        // them took Bosch from 47 usable images to 10.
+        if (inBounds && w * h < minPlacedArea) continue;
+        hits.push(inBounds ? { name, x, y, w, h, inBounds: true } : { name, inBounds: false });
       }
-      if (!img?.width || !img?.height) continue;
-      if (img.width * img.height < minArea) continue;
-      let png = null;
-      try {
-        png = await toPng(img);
-      } catch {
-        png = null;
+    }
+
+    const decoded = new Map(); // name -> {width,height,buffer} | null
+    for (const hit of hits) {
+      if (!decoded.has(hit.name)) {
+        let entry = null;
+        try {
+          const img = await new Promise((resolve) => page.objs.get(hit.name, resolve));
+          if (img?.width && img?.height && img.width * img.height >= minArea) {
+            const png = await toPng(img);
+            if (png) entry = { width: img.width, height: img.height, buffer: png };
+          }
+        } catch {
+          entry = null; // object not resolvable — skip rather than fail the document
+        }
+        decoded.set(hit.name, entry);
       }
-      if (png) out.push({ page: p, name, width: img.width, height: img.height, buffer: png });
+      const d = decoded.get(hit.name);
+      if (d) {
+        out.push(
+          hit.inBounds
+            ? { page: p, name: hit.name, ...d, x: hit.x, y: hit.y, w: hit.w, h: hit.h, inBounds: true }
+            : { page: p, name: hit.name, ...d, inBounds: false }
+        );
+      }
     }
   }
 
-  return out.sort((a, b) => b.width * b.height - a.width * a.height);
+  return out;
 }
 
 /**
