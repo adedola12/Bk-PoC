@@ -26,6 +26,24 @@ const Badge = ({ label }) => (
   </span>
 );
 
+/* Extraction is one long POST with no streaming progress, and on a phone a
+   two-minute wait behind a disabled button is indistinguishable from a hang.
+   Estimate the wait from file size instead, measured against this deployment:
+
+     55 KB datasheet ...........  ~20s
+     534 KB datasheet ..........  ~20s
+     16.6 MB / 104-page catalogue ~115s
+
+   ~20s of fixed cost plus ~5.5s per MB fits all three. It is an estimate and
+   the UI says so — the point is to show the thing is alive and roughly how
+   long is left, not to promise a deadline. */
+const estimateExtractionMs = (bytes = 0) => Math.round((20 + (bytes / 1048576) * 5.5) * 1000);
+
+const mmss = (ms) => {
+  const s = Math.max(0, Math.round(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+
 /* ─────────── D11: no silent dismissal ─────────── */
 export default function TriageVerify() {
   const [items, setItems] = React.useState([]);
@@ -33,6 +51,24 @@ export default function TriageVerify() {
   const [query, setQuery] = React.useState("");
   const [bulkBusy, setBulkBusy] = React.useState(false);
   const [busy, setBusy] = React.useState(null);
+
+  // Live extraction progress. `tick` only exists to re-render the timer.
+  const [progress, setProgress] = React.useState(null);
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (!progress) return;
+    const id = setInterval(() => setTick((n) => n + 1), 500);
+    return () => clearInterval(id);
+  }, [progress]);
+
+  // Warn before a reload or tab close mid-extraction: the request dies with the
+  // page and the products are lost after the model work has already been paid for.
+  React.useEffect(() => {
+    if (!progress) return;
+    const warn = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [progress]);
 
   const load = React.useCallback(() => {
     fetchTriage()
@@ -70,6 +106,11 @@ export default function TriageVerify() {
 
   const runExtract = async (upload) => {
     setBusy(upload._id);
+    setProgress({
+      name: upload.originalName,
+      startedAt: Date.now(),
+      estimateMs: estimateExtractionMs(upload.size),
+    });
     try {
       const r = await extractUpload(upload._id);
       rememberExtracted(upload._id); // step 3 scopes to what this session extracted
@@ -83,6 +124,7 @@ export default function TriageVerify() {
       toast.error(errMsg(err, "Extraction failed"));
     } finally {
       setBusy(null);
+      setProgress(null);
     }
   };
 
@@ -181,6 +223,47 @@ export default function TriageVerify() {
           <p className="mt-1 text-xs text-slate-600">
             Confirm any classification above, then extract. Products land in step 3.
           </p>
+
+          {progress && (() => {
+            const elapsed = Date.now() - progress.startedAt;
+            const over = elapsed > progress.estimateMs;
+            // Hold at 95% rather than sitting at 100% while still working — a
+            // full bar that keeps spinning reads as broken.
+            const pct = Math.min(95, (elapsed / progress.estimateMs) * 100);
+            return (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mt-3 rounded-lg border border-bk-gold/50 bg-bk-gold/5 p-3"
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="min-w-0 truncate text-xs font-semibold text-bk-navy">
+                    Extracting {progress.name}
+                  </p>
+                  <p className="shrink-0 text-xs tabular-nums text-slate-600">
+                    {mmss(elapsed)}
+                    {!over && <span className="text-slate-400"> / ~{mmss(progress.estimateMs)}</span>}
+                  </p>
+                </div>
+
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                  <div
+                    className={`h-full rounded-full transition-[width] duration-500 ease-linear ${
+                      over ? "animate-pulse bg-bk-navy" : "bg-bk-gold"
+                    }`}
+                    style={{ width: `${over ? 95 : pct}%` }}
+                  />
+                </div>
+
+                <p className="mt-1.5 text-[11px] leading-relaxed text-slate-600">
+                  {over
+                    ? "Still working — this one is taking longer than the estimate. Large catalogues are read page by page. Keep this page open."
+                    : "Reading the document and extracting products. Keep this page open — leaving cancels the run."}
+                </p>
+              </div>
+            );
+          })()}
+
           <div className="mt-2 flex flex-wrap gap-2">
             {extractable.map((u) => (
               <button
