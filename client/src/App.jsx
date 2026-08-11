@@ -22,6 +22,18 @@ const greeting = () => {
   return "Good evening";
 };
 
+/** The numbered step badge, shared by the sidebar and the mobile bar. */
+const StepBadge = ({ step, isActive, className = "h-5 w-5 text-[11px]" }) => (
+  <span
+    className={`flex shrink-0 items-center justify-center rounded-full font-bold ${className} ${
+      isActive ? "bg-bk-gold text-bk-navy-deep" : "bg-white/15 text-white/70"
+    }`}
+    aria-hidden
+  >
+    {step}
+  </span>
+);
+
 export default function App() {
   const location = useLocation();
   const today = new Date().toLocaleDateString("en-NG", {
@@ -60,14 +72,7 @@ export default function App() {
             >
               {({ isActive }) => (
                 <>
-                  <span
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                      isActive ? "bg-bk-gold text-bk-navy-deep" : "bg-white/15 text-white/70"
-                    }`}
-                    aria-hidden
-                  >
-                    {step}
-                  </span>
+                  <StepBadge step={step} isActive={isActive} />
                   <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden />
                   {label}
                 </>
@@ -87,12 +92,21 @@ export default function App() {
       {/* ─────────── main ─────────── */}
       <div className="min-w-0 flex-1">
         <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <div>
-              <h1 className="text-lg font-bold text-bk-navy">{greeting()}, Adedolapo</h1>
-              <p className="text-xs text-slate-500">{today}</p>
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
+            <div className="flex min-w-0 items-center gap-2.5">
+              {/* The sidebar carries the brand from `sm` up; below that it is
+                  hidden, so without this the app is unbranded on a phone. */}
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-bk-gold text-sm font-extrabold text-bk-navy-deep sm:hidden">
+                BK
+              </span>
+              <div className="min-w-0">
+                <h1 className="truncate text-base font-bold text-bk-navy sm:text-lg">
+                  {greeting()}, Adedolapo
+                </h1>
+                <p className="truncate text-xs text-slate-500">{today}</p>
+              </div>
             </div>
-            <span className="rounded-full border border-bk-gold/40 bg-bk-gold/10 px-3 py-1 text-xs font-semibold text-bk-navy">
+            <span className="shrink-0 rounded-full border border-bk-gold/40 bg-bk-gold/10 px-3 py-1 text-[11px] font-semibold text-bk-navy sm:text-xs">
               PoC · Full pipeline
             </span>
           </div>
@@ -103,11 +117,44 @@ export default function App() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="mx-auto max-w-6xl px-6 py-8"
+          /* pb-28 on mobile clears the fixed step bar below; without it the
+             last row of any page sits underneath it and cannot be reached. */
+          className="mx-auto max-w-6xl px-4 pb-28 pt-8 sm:px-6 sm:pb-8"
         >
           <Outlet />
         </motion.main>
       </div>
+
+      {/* ─────────── mobile step bar ───────────
+          The sidebar is `sm:flex`, so below 640px there was NO navigation at
+          all — on a phone you could not move between the three steps. Three
+          fixed tabs instead: always visible, thumb-height, same numbering. */}
+      <nav
+        aria-label="Steps"
+        className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-bk-navy-deep pb-[env(safe-area-inset-bottom)] sm:hidden"
+      >
+        {NAV.map(({ to, step, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              `flex flex-1 flex-col items-center gap-1 px-1 py-2.5 text-[11px] font-medium transition-colors duration-200 ${
+                isActive ? "text-bk-gold-soft" : "text-white/60"
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span className="flex items-center gap-1.5">
+                  <StepBadge step={step} isActive={isActive} className="h-4 w-4 text-[10px]" />
+                  <Icon className="h-4 w-4" aria-hidden />
+                </span>
+                <span className="truncate">{label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
 
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar newestOnTop />
     </div>
