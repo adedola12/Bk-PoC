@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { IconUploadCloud, IconFile, IconX, IconLink } from "../icons.jsx";
+import { IconUploadCloud, IconFile, IconX, IconLink, IconCheckSquare } from "../icons.jsx";
 import { uploadFiles, uploadFromUrl, errMsg } from "../api.js";
 
 const fmtSize = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${(b / 1024).toFixed(0)} KB`);
@@ -11,8 +11,10 @@ export default function Upload() {
   const [mode, setMode] = React.useState("files"); // files | url (D16)
   const [url, setUrl] = React.useState("");
   const [files, setFiles] = React.useState([]);
+  const [template, setTemplate] = React.useState(null); // the BK sheet to emit into
   const [busy, setBusy] = React.useState(false);
   const [dragOver, setDragOver] = React.useState(false);
+  const [tplDragOver, setTplDragOver] = React.useState(false);
   const navigate = useNavigate();
 
   const handleUrlSubmit = async (e) => {
@@ -43,8 +45,16 @@ export default function Upload() {
     if (!files.length) return toast.warn("Choose at least one file");
     setBusy(true);
     try {
-      const { items, runId } = await uploadFiles(files);
-      toast.success(`${items.length} file(s) triaged — run ${runId.slice(0, 19)}`);
+      /* The template rides in the SAME request as the catalogue. Files uploaded
+         together share a runId, and that is the whole pairing rule — emission
+         looks for the empty bk_template in the batch. Sending it separately
+         would give it its own runId and silently fall back to the bundled
+         sheet, which is exactly the mistake the old UI invited by not
+         mentioning templates at all. */
+      const { items, runId } = await uploadFiles(template ? [...files, template] : files);
+      toast.success(
+        `${items.length} file(s) triaged${template ? ` — emission will fill ${template.name}` : ""} — run ${runId.slice(0, 19)}`
+      );
       navigate("/triage");
     } catch (err) {
       toast.error(errMsg(err, "Upload failed"));
@@ -164,6 +174,61 @@ export default function Upload() {
             ))}
           </ul>
         )}
+
+        {/* The BK sheet to emit into. A separate control because it answers a
+            different question from "which catalogue?" — but it is submitted in
+            the SAME request, since the pairing rule is a shared runId. */}
+        <div className="mt-5 rounded-md border border-slate-200 bg-slate-50/60 p-4">
+          <p className="text-sm font-semibold text-bk-navy">BK bulk-upload template</p>
+          <p className="mt-0.5 text-xs text-slate-600">
+            Upload the empty sheet for this category and the emission fills that exact template.
+            Leave it out and the default Wash Basins &amp; Pedestals sheet is used.
+          </p>
+
+          {template ? (
+            <div className="mt-3 flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
+              <IconCheckSquare className="h-4 w-4 text-emerald-700" aria-hidden />
+              <span className="min-w-0 flex-1 truncate text-emerald-900">{template.name}</span>
+              <span className="shrink-0 text-xs text-emerald-800">{fmtSize(template.size)}</span>
+              <button
+                type="button"
+                aria-label="Remove template"
+                onClick={() => setTemplate(null)}
+                className="rounded p-1 text-emerald-700 transition-colors duration-150 hover:bg-emerald-200"
+              >
+                <IconX className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <label
+              htmlFor="template"
+              onDragOver={(e) => {
+                e.preventDefault();
+                setTplDragOver(true);
+              }}
+              onDragLeave={() => setTplDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setTplDragOver(false);
+                if (e.dataTransfer.files?.[0]) setTemplate(e.dataTransfer.files[0]);
+              }}
+              className={`mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed px-4 py-5 text-center transition-colors duration-200 ${
+                tplDragOver ? "border-bk-gold bg-bk-gold/5" : "border-slate-300 bg-white hover:border-bk-gold"
+              }`}
+            >
+              <IconCheckSquare className="h-4 w-4 text-bk-navy" aria-hidden />
+              <span className="text-sm font-medium text-bk-navy">Add template (.xlsx)</span>
+              <span className="text-xs text-slate-500">optional</span>
+              <input
+                id="template"
+                type="file"
+                accept=".xlsx,.xlsm"
+                className="hidden"
+                onChange={(e) => setTemplate(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          )}
+        </div>
 
         <button
           type="submit"
