@@ -133,7 +133,7 @@ export default function TriageVerify() {
   return (
     <div>
       {/* sticky toolbar — actions stay reachable however far the queue scrolls */}
-      <div className="sticky top-0 z-10 -mx-6 border-b border-slate-200 bg-surface/95 px-6 py-3 backdrop-blur">
+      <div className="sticky top-0 z-10 -mx-4 border-b border-slate-200 bg-surface/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold text-bk-navy">Triage verification</h2>
@@ -187,10 +187,17 @@ export default function TriageVerify() {
                 key={u._id}
                 onClick={() => runExtract(u)}
                 disabled={busy === u._id}
-                className="flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold disabled:opacity-50"
+                title={u.originalName}
+                /* max-w-full + truncate: a long source name like
+                   01_Twyford__Sanitary_Ware__Wash_Basins__Pedestal.xlsx rendered
+                   as a 392px button inside a 343px column and scrolled the whole
+                   page sideways on a phone. */
+                className="flex max-w-full items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold disabled:opacity-50"
               >
-                <FiPlay className="h-3 w-3" aria-hidden />
-                {busy === u._id ? "Extracting…" : u.originalName}
+                <FiPlay className="h-3 w-3 shrink-0" aria-hidden />
+                <span className="truncate">
+                  {busy === u._id ? "Extracting…" : u.originalName}
+                </span>
               </button>
             ))}
           </div>

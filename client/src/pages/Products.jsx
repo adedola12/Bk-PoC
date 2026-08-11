@@ -98,7 +98,7 @@ export default function Products() {
   return (
     <div>
       {/* sticky toolbar — search + emit stay reachable during scroll */}
-      <div className="sticky top-0 z-10 -mx-6 border-b border-slate-200 bg-surface/95 px-6 py-3 backdrop-blur">
+      <div className="sticky top-0 z-10 -mx-4 border-b border-slate-200 bg-surface/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold text-bk-navy">Products</h2>
