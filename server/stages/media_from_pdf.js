@@ -73,8 +73,11 @@ export async function planImageAssignments({ iprs, byPage, anchorsByPage, pageOf
       viaAnchor = Boolean(best);
     }
     if (!best) {
-      // no anchor — fall back to ranking the page's images
-      const distinct = [...new Map(pool.map((i) => [i.name, i])).values()];
+      // No anchor, so this IS the biggest-image question — apply the strict
+      // source-pixel gate here so a thumbnail or icon cannot outrank the
+      // product shot the way it never could before.
+      const big = pool.filter((i) => i.width * i.height >= 30000);
+      const distinct = [...new Map((big.length ? big : pool).map((i) => [i.name, i])).values()];
       try {
         best = await pickProductImage([...distinct].sort((a, b) => b.width * b.height - a.width * a.height));
       } catch {
@@ -93,9 +96,18 @@ export async function attachEmbeddedImages(iprs, filePath, sourceFile, { log } =
     return 0;
   }
 
+  /* The source-pixel gate exists to stop a logo winning "the biggest image on
+     this page". Anchor matching does not ask that question — it asks which
+     image sits nearest this product's code — and under the default gate the
+     Bosch cards' own thumbnails were the casualties: they are ~2–5k source
+     pixels, so 30000 discarded exactly the images the client wanted and left
+     only the lifestyle photography. Collect small images too and let position
+     decide; the fallback path below still applies the strict gate, because
+     that path IS asking the biggest-image question.
+     minPlacedArea drops bullets and rules, which no proximity test survives. */
   let images = [];
   try {
-    images = await extractPlacedImages(filePath);
+    images = await extractPlacedImages(filePath, { minArea: 2000, minPlacedArea: 400 });
   } catch (err) {
     log?.({ kind: "media_error", stage: "extract", file: sourceFile, message: err.message });
     return 0;

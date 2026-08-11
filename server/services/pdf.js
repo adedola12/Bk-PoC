@@ -190,6 +190,18 @@ export async function extractPlacedImages(
         stack.push(ctm.slice());
         ctm = Util.transform(ctm, args[0]);
       } else if (fn === OPS.paintFormXObjectEnd) ctm = stack.pop() ?? identity.slice();
+      else if (fn === OPS.beginGroup) {
+        /* A transparency group renders into a scratch canvas and is composited
+           back. pdfjs sets that canvas up as
+             scale(1/scaleX, 1/scaleY) · translate(-offsetX, -offsetY) · CTM
+           and composites with translate(offsetX, offsetY) · scale(scaleX, scaleY),
+           so offset and scale cancel and content lands at the CTM as it stood
+           on entry — group.matrix only sizes the scratch canvas. The CTM is
+           therefore left alone; what must be mirrored is the SAVE that
+           beginGroup performs internally, or the stack desynchronises and
+           transforms inside a group leak outward. */
+        stack.push(ctm.slice());
+      } else if (fn === OPS.endGroup) ctm = stack.pop() ?? identity.slice();
       else if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject) {
         const name = args[0];
         if (typeof name !== "string") continue;
@@ -203,11 +215,12 @@ export async function extractPlacedImages(
         const h = Math.max(...ys) - y;
         const pad = 5; // rounding slack at the page edge
         const inBounds = x >= vx0 - pad && y >= vy0 - pad && x + w <= vx1 + pad && y + h <= vy1 + pad;
-        // A rect outside the MediaBox means this walk did not model something
-        // (tiling pattern, soft-mask group) and the POSITION is not to be
-        // trusted. The image still is: it is returned unplaced so callers can
-        // fall back to ranking it, rather than losing it outright — dropping
-        // them took Bosch from 47 usable images to 10.
+        // A rect outside the page is usually not a bug in this walk: print
+        // artwork routinely parks variants and bleed off the CropBox, where it
+        // never renders — the Bosch guide draws images at x=3970 on a
+        // 2381-wide page. Either way the POSITION cannot be used. The image
+        // still can be, so it is returned unplaced for the ranking fallback
+        // rather than lost outright.
         if (inBounds && w * h < minPlacedArea) continue;
         hits.push(inBounds ? { name, x, y, w, h, inBounds: true } : { name, inBounds: false });
       }

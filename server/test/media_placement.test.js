@@ -36,14 +36,25 @@ describe("product images are matched by position, not by page", () => {
   }, 60_000);
 
   it("an image whose position cannot be trusted is kept, not discarded", async () => {
-    // Bosch draws most of its images inside transparency groups, where the
-    // coordinates come out group-local. Those must still reach the fallback
-    // ranking — dropping them cost 37 of 47 usable images.
+    // Print artwork parks variants and bleed off the page — Bosch draws images
+    // at x=3970 on a 2381-wide sheet. Their rects are unusable but the images
+    // must still reach the ranking fallback; dropping them cost 37 of 47.
     const images = await extractPlacedImages(fixture("Revised_Quick_Refrence_Guide.pdf"));
     expect(images.length).toBeGreaterThan(20);
     expect(images.some((i) => i.inBounds === false)).toBe(true);
     expect(images.some((i) => i.inBounds === true)).toBe(true);
   }, 120_000);
+
+  it("finds the per-card thumbnails, which the source-pixel gate hides", async () => {
+    // The card thumbnails are ~2-5k source pixels, so the 30000 gate that
+    // stops a logo winning "biggest image on the page" discarded precisely the
+    // images the client asked for. Position, not size, is what identifies them.
+    const file = fixture("Revised_Quick_Refrence_Guide.pdf");
+    const strict = (await extractPlacedImages(file)).filter((i) => i.inBounds);
+    const loose = (await extractPlacedImages(file, { minArea: 2000, minPlacedArea: 400 })).filter((i) => i.inBounds);
+    expect(loose.length).toBeGreaterThan(strict.length * 3);
+    expect(loose.some((i) => i.width * i.height < 30000)).toBe(true);
+  }, 180_000);
 
   it("gives two products on the SAME page different images", async () => {
     const file = fixture("Revised_Quick_Refrence_Guide.pdf");
