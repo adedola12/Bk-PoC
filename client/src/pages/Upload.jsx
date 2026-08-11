@@ -75,11 +75,7 @@ export default function Upload() {
               mode === key ? "bg-white text-bk-navy shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            {/* shrink-0: the tabs are flex-1, so without it the icon is the
-                thing that gives way and renders squashed (11x16 for a 16x16
-                box). Predates the icon-library change — the old set squashed
-                identically. */}
-            <Icon className="h-4 w-4 shrink-0" aria-hidden /> {label}
+            <Icon className="h-4 w-4" aria-hidden /> {label}
           </button>
         ))}
       </div>

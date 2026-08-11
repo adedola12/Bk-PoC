@@ -38,8 +38,20 @@ import {
  * deliberately left to those classes: every call site sets its own h-/w-, and
  * CSS overrides the width/height attributes the component emits.
  */
+/**
+ * shrink-0 is the default because an icon has no business being the thing that
+ * gives way. Most of these sit in flex rows next to text, and a flex child
+ * shrinks below its width unless told not to — on the live catalogue that left
+ * ~190 icons in the review queue rendering at 10x16 inside a 16x16 box, plus
+ * the two upload tabs and one product control. The old icon set squashed the
+ * same way, so this is a standing bug fixed at the source rather than patched
+ * at each of the dozens of call sites. A caller that genuinely wants shrinking
+ * can still pass `shrink` in className, which wins by coming later.
+ */
 const icon = (glyph, name) => {
-  const Component = (props) => <HugeiconsIcon icon={glyph} {...props} />;
+  const Component = ({ className, ...props }) => (
+    <HugeiconsIcon icon={glyph} className={className ? `shrink-0 ${className}` : "shrink-0"} {...props} />
+  );
   Component.displayName = name;
   return Component;
 };
