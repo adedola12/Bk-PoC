@@ -15,7 +15,11 @@ import { visionExtractPage, normCode } from "./vision_extract.js";
  */
 
 const CHUNK_PAGES = 2; // keeps per-call JSON under the output budget
-const CONCURRENCY = 5;
+// 5 parallel chunks tripped Bedrock's per-minute limit on a 46-page hostile
+// catalogue — 4.5 minutes of vision work lost to a 429. 3 keeps the wall
+// time close while staying under the limit; the client also backs off on
+// throttles now, so a burst degrades into a wait rather than a failure.
+const CONCURRENCY = Number(process.env.BULK_CONCURRENCY || 3);
 
 const TEXT_CATALOG_SYSTEM = `You extract products from pages of a POWER-TOOL trade catalog (text layer).
 Return every distinct product with its part number and specification pairs.

@@ -79,8 +79,24 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * @param {string} [opts.tag] - label for the log entry
  * @returns {Promise<object>} parsed JSON
  */
+/**
+ * Is this the provider refusing load rather than rejecting the request?
+ *
+ * Bedrock signals it as a ThrottlingException; the direct API as HTTP 429.
+ * Worth separating because a throttle is the one error where waiting LONGER
+ * is the fix — a bulk catalogue fans chunks out in parallel batches, and
+ * 1s/2s of backoff is far too short to clear a per-minute limit. Three of
+ * these in one morning killed a live demo and a 4.5-minute vision run.
+ */
+const isThrottle = (err) =>
+  err?.status === 429 ||
+  err?.$metadata?.httpStatusCode === 429 ||
+  /throttl|too many requests|rate ?limit|slow ?down/i.test(`${err?.name ?? ""} ${err?.message ?? ""}`);
+
 export async function callClaudeJSON({ system, messages, maxTokens = 1500, log, tag = "call" }) {
-  const attempts = 3;
+  // Throttles get more attempts and much longer waits; everything else keeps
+  // the original short retry, since a malformed prompt will not fix itself.
+  const attempts = 6;
   let lastErr;
   for (let i = 0; i < attempts; i++) {
     const started = Date.now();
@@ -127,9 +143,16 @@ export async function callClaudeJSON({ system, messages, maxTokens = 1500, log, 
       }
     } catch (err) {
       lastErr = err;
-      log?.({ kind: "ai_error", tag, provider: PROVIDER, attempt: i + 1, message: err.message });
+      const throttled = isThrottle(err);
+      log?.({ kind: "ai_error", tag, provider: PROVIDER, attempt: i + 1, throttled, message: err.message });
       if (err.code === "AI_OUTPUT_TRUNCATED") break; // retrying cannot help
-      if (i < attempts - 1) await sleep(1000 * 2 ** i);
+      if (!throttled && i >= 2) break; // non-throttle errors keep the old 3-attempt budget
+      if (i < attempts - 1) {
+        // Throttles: 2s, 4s, 8s, 16s, 32s with jitter, so a fanned-out batch
+        // does not resynchronise and hammer the limit again in lockstep.
+        const wait = throttled ? 2000 * 2 ** i + Math.floor(Math.random() * 500) : 1000 * 2 ** i;
+        await sleep(wait);
+      }
     }
   }
   throw lastErr;
