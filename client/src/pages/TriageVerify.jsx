@@ -113,6 +113,14 @@ export default function TriageVerify() {
     });
     try {
       const r = await extractUpload(upload._id);
+      // An empty BK template uploaded with the catalogue is the sheet the
+      // emission gets written INTO, not a source. "0 rows extracted" would
+      // read as a failure, so name its actual role instead.
+      if (r.role === "emission_target") {
+        toast.success(`${upload.originalName} will be filled on emit — nothing to extract from a blank template`);
+        load();
+        return;
+      }
       rememberExtracted(upload._id); // step 3 scopes to what this session extracted
       toast.success(
         `${r.count} row(s) extracted from ${upload.originalName}${

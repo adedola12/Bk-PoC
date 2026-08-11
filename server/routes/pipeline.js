@@ -15,6 +15,7 @@ import { createRun, resolveRunPath } from "../services/runs.js";
 import { bulkExtract } from "../stages/bulk_extract.js";
 import { attachEmbeddedImages } from "../stages/media_from_pdf.js";
 import { detectAnomalies } from "../eval/injector.js";
+import { readDataRows } from "../emitter/index.js";
 
 const router = express.Router();
 
@@ -48,6 +49,22 @@ router.post("/:uploadId/extract", async (req, res, next) => {
         code: "source_file_missing",
         originalName: upload.originalName,
       });
+    }
+
+    /* An EMPTY bk_template is not a source at all — it is the sheet the client
+       uploaded alongside their catalogue for the emission to be written into
+       (routes/emit.js resolveTemplateFor). Extracting it would "succeed" with
+       zero rows, which reads as a failure to anyone watching. Say what it
+       actually is instead. A FILLED template still extracts as before. */
+    if (label === "bk_template") {
+      const { rows } = await readDataRows(sourcePath);
+      if (rows.length === 0) {
+        return res.status(200).json({
+          count: 0,
+          role: "emission_target",
+          message: `"${upload.originalName}" is an empty BK template — it will be used as the emission target for the files uploaded with it, so there is nothing to extract from it.`,
+        });
+      }
     }
 
     const run = createRun("extract");

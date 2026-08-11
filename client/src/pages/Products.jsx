@@ -170,6 +170,18 @@ export default function Products() {
             Emission complete — zero-touch {(emission.zeroTouch * 100).toFixed(0)}% ({emission.dispositions.PASS} PASS ·{" "}
             {emission.dispositions.TODO} TODO · {emission.dispositions.REVIEW} REVIEW)
           </p>
+          {/* Which template each workbook was written into. The client uploads
+              their own template with the catalogue now, so "which sheet did
+              this actually fill?" is the first thing they check. */}
+          {emission.templates?.length > 0 && (
+            <ul className="mt-1 space-y-0.5 text-emerald-900">
+              {emission.templates.map((t) => (
+                <li key={t.template}>
+                  {t.rows} row{t.rows === 1 ? "" : "s"} → <span className="font-medium">{t.template}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="mt-1 space-x-3">
             {emission.files.map((f) => (
               <a key={f} href={emissionDownloadUrl(emission.runId, f)} className="font-medium text-bk-navy underline">

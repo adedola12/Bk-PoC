@@ -16,6 +16,60 @@ const router = express.Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE = path.resolve(__dirname, "../../fixtures/catalogue_template_Sanitary-Wash_Basins___Pedestals.xlsx");
 
+/**
+ * Which template does a source emit into?
+ *
+ * BK asked to upload the catalogue and its bulk-upload template together, so
+ * safes and power tools stop being forced through Wash Basins & Pedestals —
+ * required columns like Drain Size do not apply, and every row gated.
+ *
+ * Two rules:
+ *
+ *   a template is EMPTY   A bk_template with data rows is a filled sheet and
+ *                         a product SOURCE (the Twyford short-circuit). One
+ *                         with headers only is an emission TARGET. Same label,
+ *                         opposite roles, told apart by content rather than by
+ *                         asking the user to declare it.
+ *   same upload batch     Files uploaded together share a ledger runId, so the
+ *                         empty template in that batch is the one its
+ *                         catalogues emit into. No new UI, no pairing step.
+ *
+ * Falls back to the bundled sanitary template so existing sources keep working.
+ */
+const templateCache = new Map(); // uploadId -> resolved path (per process)
+
+async function resolveTemplateFor(upload) {
+  if (!upload?.runId) return TEMPLATE;
+  const key = String(upload._id ?? upload.runId);
+  if (templateCache.has(key)) return templateCache.get(key);
+
+  let resolved = TEMPLATE;
+  try {
+    const siblings = await UploadLedger.find({
+      runId: upload.runId,
+      $or: [{ "triage.label": "bk_template" }, { "triage.verifiedLabel": "bk_template" }],
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    for (const s of siblings) {
+      if (String(s._id) === String(upload._id)) continue; // a sheet cannot be its own target
+      const p = resolveRunPath(s.storedPath);
+      if (!p) continue;
+      const { rows } = await readDataRows(p); // filled = product source, empty = target
+      if (rows.length === 0) {
+        resolved = p;
+        break;
+      }
+    }
+  } catch {
+    resolved = TEMPLATE; // an unreadable sibling must not stop the emission
+  }
+
+  templateCache.set(key, resolved);
+  return resolved;
+}
+
 let styleExamplesCache = null;
 async function styleExamples() {
   // house style learned from the golden file's own Description column (D3)
@@ -54,7 +108,10 @@ router.post("/", async (req, res, next) => {
     // uploadIds narrows the emission to those source files — a walkthrough
     // emits only what it just processed. Empty emits the whole store.
     const scope = uploadIds.length ? { upload: { $in: uploadIds } } : {};
-    const iprs = await IPR.find(scope).populate("upload", "originalName triage storedPath").lean();
+    // runId is selected because template resolution pairs a catalogue with the
+    // template uploaded in the SAME batch — without it every source silently
+    // falls back to the bundled sanitary sheet.
+    const iprs = await IPR.find(scope).populate("upload", "originalName triage storedPath runId").lean();
     if (!iprs.length) {
       return res.status(400).json({
         error: uploadIds.length
@@ -63,7 +120,19 @@ router.post("/", async (req, res, next) => {
       });
     }
 
-    const schema = await readTemplateSchema(TEMPLATE);
+    /* Each source emits into ITS OWN template when one was uploaded alongside
+       it, so a safe catalogue is no longer forced through Wash Basins &
+       Pedestals. Resolved per IPR, then grouped: one workbook per template. */
+    for (const ipr of iprs) {
+      ipr.__template = await resolveTemplateFor(ipr.upload);
+    }
+    const templatePaths = [...new Set(iprs.map((i) => i.__template))];
+    const schemaByTemplate = new Map();
+    for (const t of templatePaths) schemaByTemplate.set(t, await readTemplateSchema(t));
+    if (templatePaths.length > 1) {
+      run.log({ kind: "multi_template", count: templatePaths.length, templates: templatePaths.map((t) => path.basename(t)) });
+    }
+    const schema = schemaByTemplate.get(templatePaths[0]);
     const examples = await styleExamples();
 
     // media pairing: product_image uploads ↔ base products (Cloudinary URLs)
@@ -81,7 +150,7 @@ router.post("/", async (req, res, next) => {
       await ReviewItem.create({ runId: run.runId, reason: "unpaired_media", detail: name });
     }
 
-    const rowsOut = [];
+    const rowsByTemplate = new Map(templatePaths.map((t) => [t, []]));
     const report = {
       total: iprs.length,
       dispositions: { PASS: 0, REVIEW: 0, TODO: 0 },
@@ -95,7 +164,7 @@ router.post("/", async (req, res, next) => {
     // Map each row once, then fill the missing Descriptions concurrently.
     // Cached Stage 8 output is reused unless the caller asks to regenerate, so
     // a second emit of an unchanged catalog costs no AI calls at all.
-    const prepared = iprs.map((ipr) => ({ ipr, ...mapIprToRow(ipr, schema) }));
+    const prepared = iprs.map((ipr) => ({ ipr, ...mapIprToRow(ipr, schemaByTemplate.get(ipr.__template)) }));
     const wantsContent = (p) => generate && !p.ipr.templateRow && !p.row["Description"];
     const pending = prepared.filter(
       (p) => wantsContent(p) && (regenerate || !p.ipr.generated?.description)
@@ -149,7 +218,10 @@ router.post("/", async (req, res, next) => {
         await IPR.updateOne({ _id: ipr._id }, { $addToSet: { mediaRefs: cover } });
       }
 
-      const gate = gateRow({ ipr, row, schema, profile, dropdownFlags, factChecked });
+      // Gate against the row's OWN template — required columns differ per
+      // template, and checking a safes row against Wash Basins would fail it
+      // on Drain Size, exactly the problem this feature exists to remove.
+      const gate = gateRow({ ipr, row, schema: schemaByTemplate.get(ipr.__template), profile, dropdownFlags, factChecked });
       report.customDropdownValues += gate.customDropdowns.length;
       await IPR.updateOne({ _id: ipr._id }, { disposition: gate.disposition });
       report.dispositions[gate.disposition]++;
@@ -180,7 +252,7 @@ router.post("/", async (req, res, next) => {
       }
 
       if (gate.disposition !== "REVIEW") {
-        rowsOut.push(row);
+        rowsByTemplate.get(ipr.__template).push(row);
         if (ipr.upload?._id) {
           await UploadLedger.updateOne({ _id: ipr.upload._id }, { $addToSet: { emittedIdentityKeys: identityKey(ipr) } });
         }
@@ -189,7 +261,19 @@ router.post("/", async (req, res, next) => {
 
     const emissionDir = path.join(run.dir, "emission");
     fs.mkdirSync(emissionDir, { recursive: true });
-    const files = await emitRows(TEMPLATE, rowsOut, path.join(emissionDir, "BK_bulk_upload.xlsx"));
+    const files = [];
+    const perTemplate = [];
+    for (const [tpl, rows] of rowsByTemplate) {
+      if (!rows.length) continue;
+      // One workbook per template, named after it when more than one is in
+      // play so two sheets never collide on BK_bulk_upload.xlsx.
+      const label = templatePaths.length > 1 ? `BK_bulk_upload__${path.basename(tpl).replace(/\.xlsx$/i, "")}.xlsx` : "BK_bulk_upload.xlsx";
+      const written = await emitRows(tpl, rows, path.join(emissionDir, label));
+      files.push(...written);
+      perTemplate.push({ template: path.basename(tpl), rows: rows.length, files: written.map((f) => path.basename(f)) });
+    }
+    report.templates = perTemplate;
+    const rowsOut = [...rowsByTemplate.values()].flat();
 
     report.zeroTouch = report.total ? (report.dispositions.PASS + report.dispositions.TODO) / report.total : 0;
     report.emittedRows = rowsOut.length;
