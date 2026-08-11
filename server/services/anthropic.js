@@ -99,12 +99,36 @@ export async function callClaudeJSON({ system, messages, maxTokens = 1500, log, 
       log?.({ kind: "ai_call", tag, provider: PROVIDER, model: MODEL, latencyMs, usage, costUsd });
 
       const text = res.content.find((b) => b.type === "text")?.text ?? "";
+
+      /* Truncation is deterministic, so retrying the same prompt at the same
+         budget fails identically — it just burns the tokens and the wall time
+         again. A dense catalogue page cost 92s and three full calls before
+         surfacing as "Expected ',' or '}' ... at position 16609", which names
+         neither the cause nor the fix. Detect it, say so, and stop. */
+      if (res.stop_reason === "max_tokens") {
+        const err = new Error(
+          `model output hit the ${maxTokens}-token limit and the JSON is truncated ` +
+            `(${usage.output_tokens ?? "?"} output tokens, tag "${tag}"). The source is too ` +
+            `dense for one call — raise maxTokens for this stage or split the input.`
+        );
+        err.code = "AI_OUTPUT_TRUNCATED";
+        throw err;
+      }
+
       const match = text.match(/\{[\s\S]*\}/); // tolerate stray prose/fences
-      if (!match) throw new Error("no JSON object in model response");
-      return JSON.parse(match[0]);
+      if (!match) throw new Error(`no JSON object in model response (tag "${tag}")`);
+      try {
+        return JSON.parse(match[0]);
+      } catch (parseErr) {
+        throw new Error(
+          `model returned unparseable JSON (tag "${tag}", stop_reason ` +
+            `${res.stop_reason}, ${match[0].length} chars): ${parseErr.message}`
+        );
+      }
     } catch (err) {
       lastErr = err;
       log?.({ kind: "ai_error", tag, provider: PROVIDER, attempt: i + 1, message: err.message });
+      if (err.code === "AI_OUTPUT_TRUNCATED") break; // retrying cannot help
       if (i < attempts - 1) await sleep(1000 * 2 ** i);
     }
   }

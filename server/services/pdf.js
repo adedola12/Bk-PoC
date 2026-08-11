@@ -87,3 +87,123 @@ export async function rasterizePages(filePath, pageNumbers, { scale = 2 } = {}) 
   }
   return out;
 }
+
+/**
+ * Pull the images embedded in a PDF's pages (D8 media).
+ *
+ * Product datasheets carry the product photo inside the PDF, but the only
+ * source of a `Cover Image` used to be a separately uploaded product_image
+ * file paired by SKU — so a datasheet that plainly shows the product still
+ * emitted with the media column empty.
+ *
+ * `minArea` exists to skip logos, rules and icons: a real product photo on a
+ * datasheet is a few hundred pixels square, while brand marks come in around
+ * 232x77. Judged on area rather than either dimension so a wide product shot
+ * is not thrown away with the letterheads.
+ *
+ * Returns PNG buffers, largest first, so a caller wanting "the product" can
+ * take the head of the list.
+ */
+export async function extractEmbeddedImages(filePath, { pages = null, minArea = 30000 } = {}) {
+  const { getDocument, OPS } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const sharp = (await import("sharp")).default;
+
+  const toPng = async (img) => {
+    // pdfjs hands back raw pixel data: 1 = grayscale 1bpp (skip, it is almost
+    // always a mask), 2 = RGB 24bpp, 3 = RGBA 32bpp.
+    const channels = img.kind === 3 ? 4 : img.kind === 2 ? 3 : null;
+    if (!channels || !img.data) return null;
+    const expected = img.width * img.height * channels;
+    const buf = Buffer.from(img.data.buffer ?? img.data, img.data.byteOffset ?? 0, img.data.length ?? expected);
+    if (buf.length < expected) return null; // truncated/unsupported encoding
+    return sharp(buf.subarray(0, expected), { raw: { width: img.width, height: img.height, channels } })
+      .png()
+      .toBuffer();
+  };
+
+  const doc = await getDocument({ url: filePath, disableFontFace: true }).promise;
+  const wanted = pages ?? Array.from({ length: doc.numPages }, (_, i) => i + 1);
+  const out = [];
+
+  for (const p of wanted) {
+    if (p < 1 || p > doc.numPages) continue;
+    const page = await doc.getPage(p);
+    const ops = await page.getOperatorList();
+    const seen = new Set();
+    for (let i = 0; i < ops.fnArray.length; i++) {
+      if (ops.fnArray[i] !== OPS.paintImageXObject && ops.fnArray[i] !== OPS.paintJpegXObject) continue;
+      const name = ops.argsArray[i][0];
+      if (typeof name !== "string" || seen.has(name)) continue;
+      seen.add(name);
+      let img;
+      try {
+        img = await new Promise((resolve) => page.objs.get(name, resolve));
+      } catch {
+        continue; // object not resolvable — skip rather than fail the document
+      }
+      if (!img?.width || !img?.height) continue;
+      if (img.width * img.height < minArea) continue;
+      let png = null;
+      try {
+        png = await toPng(img);
+      } catch {
+        png = null;
+      }
+      if (png) out.push({ page: p, name, width: img.width, height: img.height, buffer: png });
+    }
+  }
+
+  return out.sort((a, b) => b.width * b.height - a.width * a.height);
+}
+
+/**
+ * Choose the product photo from a page's embedded images.
+ *
+ * "Largest wins" is wrong: the Alca datasheet's biggest image is a dimensioned
+ * line drawing, with the actual product photo second. Brightness does not
+ * separate them either — a chrome fitting on white reads as 74% white, more
+ * than the drawing's 65%.
+ *
+ * Mid-tone coverage does, but only WITHIN a document: a drawing is bimodal
+ * (white paper, black lines) while a photo carries shading, so Alca scores
+ * 46% for the photo against 24% for the drawing. Across documents the scale
+ * shifts — the chrome Jaquar photo sits at 17% — so this ranks candidates
+ * against each other and never against a fixed threshold.
+ *
+ * The area gate first drops wordmarks and banner strips, which can otherwise
+ * score well on mid-tone while being nobody's product.
+ */
+export async function pickProductImage(images, { minShareOfLargest = 0.25 } = {}) {
+  if (!images?.length) return null;
+  if (images.length === 1) return images[0];
+
+  const sharp = (await import("sharp")).default;
+  const largest = images[0].width * images[0].height;
+  const candidates = images.filter((i) => (i.width * i.height) / largest >= minShareOfLargest);
+  if (candidates.length === 1) return candidates[0];
+
+  const midTone = async (buf) => {
+    const { data } = await sharp(buf)
+      .removeAlpha().greyscale().resize(140, 140, { fit: "inside" })
+      .raw().toBuffer({ resolveWithObject: true });
+    let mid = 0;
+    for (let i = 0; i < data.length; i++) if (data[i] > 45 && data[i] < 225) mid++;
+    return mid / data.length;
+  };
+
+  let best = candidates[0];
+  let bestScore = -1;
+  for (const c of candidates) {
+    let score = 0;
+    try {
+      score = await midTone(c.buffer);
+    } catch {
+      score = 0;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = c;
+    }
+  }
+  return best;
+}

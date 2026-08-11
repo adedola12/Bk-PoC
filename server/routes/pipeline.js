@@ -13,6 +13,7 @@ import { resolveTaxonomyIds } from "../services/ids.js";
 import { TodoItem } from "../models/TodoItem.js";
 import { createRun, resolveRunPath } from "../services/runs.js";
 import { bulkExtract } from "../stages/bulk_extract.js";
+import { attachEmbeddedImages } from "../stages/media_from_pdf.js";
 import { detectAnomalies } from "../eval/injector.js";
 
 const router = express.Router();
@@ -122,6 +123,18 @@ router.post("/:uploadId/extract", async (req, res, next) => {
       }
       return out;
     };
+
+    /* Product photos live inside the source PDF, but a Cover Image could only
+       ever come from a separately uploaded product_image paired by SKU — so a
+       datasheet showing the product still emitted with the media column empty.
+       Runs before persisting so mediaRefs is written with the rest of the row,
+       and never throws: losing an image must not cost the extraction. */
+    try {
+      const withImages = await attachEmbeddedImages(iprs, sourcePath, upload.originalName, { log: run.log });
+      if (withImages) run.log({ kind: "media", file: upload.originalName, attached: withImages });
+    } catch (err) {
+      run.log({ kind: "media_error", file: upload.originalName, message: err.message });
+    }
 
     const saved = [];
     for (const ipr of iprs) {
