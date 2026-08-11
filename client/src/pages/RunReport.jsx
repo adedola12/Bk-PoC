@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "react-toastify";
-import { FiCheckCircle, FiXCircle, FiClock } from "react-icons/fi";
+import { IconCheckCircle, IconXCircle, IconClock } from "../icons.jsx";
 import { fetchLatestReport, errMsg } from "../api.js";
 
 const TestRow = ({ id, name, entry }) => {
@@ -14,15 +14,15 @@ const TestRow = ({ id, name, entry }) => {
       <td className="px-4 py-2.5">
         {pending ? (
           <span className="flex items-center gap-1 text-xs text-slate-400">
-            <FiClock className="h-3.5 w-3.5" aria-hidden /> pending
+            <IconClock className="h-3.5 w-3.5" aria-hidden /> pending
           </span>
         ) : pass ? (
           <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700">
-            <FiCheckCircle className="h-4 w-4" aria-hidden /> PASS
+            <IconCheckCircle className="h-4 w-4" aria-hidden /> PASS
           </span>
         ) : (
           <span className="flex items-center gap-1 text-xs font-semibold text-red-700">
-            <FiXCircle className="h-4 w-4" aria-hidden /> {entry?.pass === false && entry?.metric?.includes("%") ? "REVIEW" : "FAIL"}
+            <IconXCircle className="h-4 w-4" aria-hidden /> {entry?.pass === false && entry?.metric?.includes("%") ? "REVIEW" : "FAIL"}
           </span>
         )}
       </td>

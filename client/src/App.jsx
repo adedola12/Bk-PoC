@@ -3,16 +3,16 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FiUploadCloud, FiCheckSquare, FiBox, FiMenu, FiX } from "react-icons/fi";
+import { IconUploadCloud, IconCheckSquare, IconBox, IconMenu, IconX } from "./icons.jsx";
 
 /* ─────────── navigation — the three demo steps.
    The review queue, todo list, price comparison and run report stay routed
    (/review, /todo, /prices, /report) so they can be opened on demand, but
    they are off the main flow: load → process → fill. ─────────── */
 const NAV = [
-  { to: "/upload", step: 1, label: "Load file", icon: FiUploadCloud },
-  { to: "/triage", step: 2, label: "Process file", icon: FiCheckSquare },
-  { to: "/products", step: 3, label: "Fill template", icon: FiBox },
+  { to: "/upload", step: 1, label: "Load file", icon: IconUploadCloud },
+  { to: "/triage", step: 2, label: "Process file", icon: IconCheckSquare },
+  { to: "/products", step: 3, label: "Fill template", icon: IconBox },
 ];
 
 const greeting = () => {
@@ -106,7 +106,7 @@ export default function App() {
           aria-label="Close menu"
           className="absolute right-3 top-4 rounded-md p-1.5 text-white/70 transition-colors duration-200 hover:bg-white/10 hover:text-white sm:hidden"
         >
-          <FiX className="h-5 w-5" aria-hidden />
+          <IconX className="h-5 w-5" aria-hidden />
         </button>
         <div className="flex items-center gap-2 px-5 py-5">
           <span className="flex h-9 w-9 items-center justify-center rounded-md bg-bk-gold font-extrabold text-bk-navy-deep">
@@ -164,7 +164,7 @@ export default function App() {
                 aria-expanded={navOpen}
                 className="-ml-1.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-bk-navy transition-colors duration-200 hover:bg-slate-100 sm:hidden"
               >
-                <FiMenu className="h-6 w-6" aria-hidden />
+                <IconMenu className="h-6 w-6" aria-hidden />
               </button>
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-bk-gold text-sm font-extrabold text-bk-navy-deep sm:hidden">
                 BK

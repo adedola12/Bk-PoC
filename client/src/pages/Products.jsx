@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { FiDownload, FiBox, FiTruck, FiTag, FiSearch } from "react-icons/fi";
+import { IconDownload, IconBox, IconTruck, IconTag, IconSearch } from "../icons.jsx";
 import { fetchIprs, fetchSources, runEmission, emissionDownloadUrl, errMsg } from "../api.js";
 import { lastExtracted } from "../session.js";
 
@@ -111,7 +111,7 @@ export default function Products() {
             </p>
           </div>
           <label className="relative" aria-label="Search products">
-            <FiSearch className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -124,7 +124,7 @@ export default function Products() {
             disabled={busy === "emit" || loading || !iprs.length}
             className="flex items-center gap-2 rounded-md bg-bk-gold px-4 py-2 text-sm font-bold text-bk-navy-deep transition-colors duration-200 hover:bg-bk-gold-soft disabled:opacity-50"
           >
-            <FiDownload className="h-4 w-4" aria-hidden />
+            <IconDownload className="h-4 w-4" aria-hidden />
             {busy === "emit" ? "Emitting…" : "Emit BK template"}
           </button>
         </div>
@@ -262,7 +262,7 @@ function ProductCard({ ipr, idx }) {
           />
         ) : (
           <div className={`flex h-full w-full flex-col items-center justify-center bg-gradient-to-br ${tint}`}>
-            <FiBox className="h-12 w-12" aria-hidden />
+            <IconBox className="h-12 w-12" aria-hidden />
             <span className="mt-1 text-xs font-semibold uppercase tracking-widest opacity-70">
               {brand || "image pending"}
             </span>
@@ -302,10 +302,10 @@ function ProductCard({ ipr, idx }) {
 
         <div className="mt-auto border-t border-slate-100 pt-2 text-xs text-slate-500">
           <p className="flex items-center gap-1.5">
-            <FiTruck className="h-3.5 w-3.5 text-bk-navy" aria-hidden /> 48hr delivery — Satkay Limited
+            <IconTruck className="h-3.5 w-3.5 text-bk-navy" aria-hidden /> 48hr delivery — Satkay Limited
           </p>
           <p className="mt-1 flex items-center gap-1.5">
-            <FiTag className="h-3.5 w-3.5 text-bk-navy" aria-hidden />
+            <IconTag className="h-3.5 w-3.5 text-bk-navy" aria-hidden />
             <span className="truncate">{(ipr.taxonomyPath ?? "BK template row").split(" > ").at(-1)}</span>
           </p>
         </div>

@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { FiUploadCloud, FiFile, FiX, FiLink } from "react-icons/fi";
+import { IconUploadCloud, IconFile, IconX, IconLink } from "../icons.jsx";
 import { uploadFiles, uploadFromUrl, errMsg } from "../api.js";
 
 const fmtSize = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${(b / 1024).toFixed(0)} KB`);
@@ -63,8 +63,8 @@ export default function Upload() {
 
       <div className="mb-4 flex gap-1 rounded-lg bg-slate-100 p-1" role="tablist">
         {[
-          { key: "files", label: "Upload files", Icon: FiUploadCloud },
-          { key: "url", label: "From weblink", Icon: FiLink },
+          { key: "files", label: "Upload files", Icon: IconUploadCloud },
+          { key: "url", label: "From weblink", Icon: IconLink },
         ].map(({ key, label, Icon }) => (
           <button
             key={key}
@@ -75,7 +75,11 @@ export default function Upload() {
               mode === key ? "bg-white text-bk-navy shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            <Icon className="h-4 w-4" aria-hidden /> {label}
+            {/* shrink-0: the tabs are flex-1, so without it the icon is the
+                thing that gives way and renders squashed (11x16 for a 16x16
+                box). Predates the icon-library change — the old set squashed
+                identically. */}
+            <Icon className="h-4 w-4 shrink-0" aria-hidden /> {label}
           </button>
         ))}
       </div>
@@ -125,7 +129,7 @@ export default function Upload() {
             dragOver ? "border-bk-gold bg-bk-gold/5" : "border-slate-300 hover:border-bk-gold"
           }`}
         >
-          <FiUploadCloud className="mb-3 h-8 w-8 text-bk-navy" aria-hidden />
+          <IconUploadCloud className="mb-3 h-8 w-8 text-bk-navy" aria-hidden />
           <span className="text-sm font-semibold text-bk-navy">
             Drag files here, or click to browse
           </span>
@@ -149,7 +153,7 @@ export default function Upload() {
                 transition={{ duration: 0.2, delay: i * 0.04 }}
                 className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
               >
-                <FiFile className="h-4 w-4 shrink-0 text-bk-navy" aria-hidden />
+                <IconFile className="h-4 w-4 shrink-0 text-bk-navy" aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-slate-700">{f.name}</span>
                 <span className="shrink-0 text-xs text-slate-500">{fmtSize(f.size)}</span>
                 <button
@@ -158,7 +162,7 @@ export default function Upload() {
                   onClick={() => setFiles((prev) => prev.filter((x) => x.name !== f.name))}
                   className="rounded p-1 text-slate-400 transition-colors duration-150 hover:bg-slate-200 hover:text-slate-700"
                 >
-                  <FiX className="h-4 w-4" />
+                  <IconX className="h-4 w-4" />
                 </button>
               </motion.li>
             ))}

@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { FiAlertCircle, FiCheck, FiX } from "react-icons/fi";
+import { IconAlertCircle, IconCheck, IconX } from "../icons.jsx";
 import { fetchReview, resolveReview, errMsg } from "../api.js";
 
 const REASON_LABEL = {
@@ -87,7 +87,7 @@ function ReviewCard({ item, onAct }) {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <FiAlertCircle className="h-4 w-4 text-bk-gold" aria-hidden />
+        <IconAlertCircle className="h-4 w-4 text-bk-gold" aria-hidden />
         <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
           {REASON_LABEL[item.reason] ?? item.reason}
         </span>
@@ -101,7 +101,7 @@ function ReviewCard({ item, onAct }) {
           onClick={() => onAct(item._id, "accepted")}
           className="flex items-center gap-1.5 rounded-md bg-bk-navy px-3 py-1.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-bk-navy-mid"
         >
-          <FiCheck className="h-4 w-4" aria-hidden /> Accept as-is
+          <IconCheck className="h-4 w-4" aria-hidden /> Accept as-is
         </button>
         <input
           value={correction}
@@ -120,7 +120,7 @@ function ReviewCard({ item, onAct }) {
           onClick={() => onAct(item._id, "rejected")}
           className="flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 transition-colors duration-200 hover:border-red-300 hover:text-red-600"
         >
-          <FiX className="h-4 w-4" aria-hidden /> Reject row
+          <IconX className="h-4 w-4" aria-hidden /> Reject row
         </button>
       </div>
     </div>

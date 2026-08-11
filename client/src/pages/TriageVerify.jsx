@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { FiAlertTriangle, FiCheck, FiRefreshCw, FiSearch, FiCheckCircle, FiPlay } from "react-icons/fi";
+import { IconAlertTriangle, IconCheck, IconRefreshCw, IconSearch, IconCheckCircle, IconPlay } from "../icons.jsx";
 import { fetchTriage, verifyTriage, verifyAllTriage, extractUpload, previewUrl, errMsg } from "../api.js";
 import { rememberExtracted } from "../session.js";
 
@@ -194,7 +194,7 @@ export default function TriageVerify() {
             </p>
           </div>
           <label className="relative" aria-label="Search uploads">
-            <FiSearch className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -208,7 +208,7 @@ export default function TriageVerify() {
               disabled={bulkBusy}
               className="flex items-center gap-2 rounded-md bg-bk-navy px-3 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-bk-navy-mid disabled:opacity-50"
             >
-              <FiCheckCircle className="h-4 w-4" aria-hidden />
+              <IconCheckCircle className="h-4 w-4" aria-hidden />
               {bulkBusy ? "Confirming…" : `Confirm all (${pendingTotal})`}
             </button>
           )}
@@ -220,7 +220,7 @@ export default function TriageVerify() {
             aria-label="Refresh"
             className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold"
           >
-            <FiRefreshCw className="h-4 w-4" aria-hidden /> Refresh
+            <IconRefreshCw className="h-4 w-4" aria-hidden /> Refresh
           </button>
         </div>
       </div>
@@ -285,7 +285,7 @@ export default function TriageVerify() {
                    page sideways on a phone. */
                 className="flex max-w-full items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors duration-200 hover:border-bk-gold disabled:opacity-50"
               >
-                <FiPlay className="h-3 w-3 shrink-0" aria-hidden />
+                <IconPlay className="h-3 w-3 shrink-0" aria-hidden />
                 <span className="truncate">
                   {busy === u._id ? "Extracting…" : u.originalName}
                 </span>
@@ -343,7 +343,7 @@ export default function TriageVerify() {
                     <td className="px-4 py-2.5 text-slate-700">{i.triage?.method}</td>
                     <td className="px-4 py-2.5">
                       {i.triage?.verified ? (
-                        <FiCheck className="h-4 w-4 text-emerald-600" aria-label="verified" />
+                        <IconCheck className="h-4 w-4 text-emerald-600" aria-label="verified" />
                       ) : (
                         <span className="text-slate-400">—</span>
                       )}
@@ -382,7 +382,7 @@ function VerifyCard({ item, onAct }) {
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
-          <FiAlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-bk-gold" aria-hidden />
+          <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-bk-gold" aria-hidden />
           <div className="min-w-0">
             <p className="truncate font-semibold text-bk-navy">{item.originalName}</p>
             <p className="mt-0.5 text-xs text-slate-500">

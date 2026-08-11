@@ -1,6 +1,6 @@
 import React from "react";
 import { toast } from "react-toastify";
-import { FiCheckCircle } from "react-icons/fi";
+import { IconCheckCircle } from "../icons.jsx";
 import { fetchTodos, todoDone, addManualPrice, errMsg } from "../api.js";
 
 const TYPE_LABEL = {
@@ -125,7 +125,7 @@ function TodoRow({ item, onDone }) {
             onClick={markDone}
             className="flex items-center gap-1 rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-600 transition-colors duration-200 hover:border-emerald-400 hover:text-emerald-700"
           >
-            <FiCheckCircle className="h-3.5 w-3.5" aria-hidden /> Done
+            <IconCheckCircle className="h-3.5 w-3.5" aria-hidden /> Done
           </button>
         )}
       </td>
